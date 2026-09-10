@@ -16,7 +16,7 @@ license = "Apache-2.0"
 repository = "https://github.com/Sconce-Labs/corridor-contracts"
 
 [workspace.dependencies]
-soroban-sdk = "25.3"
+soroban-sdk = "27.0"
 
 [profile.release]
 opt-level = "z"
