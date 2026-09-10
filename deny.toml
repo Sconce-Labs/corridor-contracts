@@ -1,0 +1,25 @@
+# cargo-deny — https://embarkstudios.github.io/cargo-deny/
+
+[advisories]
+yanked = "deny"
+ignore = []
+
+[licenses]
+allow = [
+    "Apache-2.0",
+    "MIT",
+    "BSD-3-Clause",
+    "BSD-2-Clause",
+    "Unicode-3.0",
+    "ISC",
+    "Zlib",
+]
+confidence-threshold = 0.9
+
+[bans]
+multiple-versions = "allow"   # soroban-sdk 25 + 27 coexist for the conformance crate
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "allow"          # rs-soroban-poseidon is a git dep
