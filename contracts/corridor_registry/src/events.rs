@@ -22,6 +22,7 @@ pub struct PolicyUpdated {
     pub corridor_id: BytesN<32>,
     pub min_tier: u32,
     pub required_disclosures: u32,
+    pub min_cred_epoch: u64,
     pub verifier: Address,
     pub vk_hash: BytesN<32>,
     pub paused: bool,
@@ -36,26 +37,13 @@ pub struct PausedSet {
     pub paused: bool,
 }
 
-/// An allowlisted relayer posted a fresh Midnight root.
+/// The operator raised a corridor's bulk-revocation floor.
 #[contractevent]
 #[derive(Clone, Debug)]
-pub struct RootPosted {
+pub struct MinCredEpochSet {
     #[topic]
     pub corridor_id: BytesN<32>,
-    #[topic]
-    pub relayer: Address,
-    pub epoch: u64,
-    pub credential_root: BytesN<32>,
-    pub revocation_root: BytesN<32>,
-}
-
-/// The admin added or removed a relayer from the `post_root` allowlist.
-#[contractevent]
-#[derive(Clone, Debug)]
-pub struct RelayerSet {
-    #[topic]
-    pub relayer: Address,
-    pub allowed: bool,
+    pub min_cred_epoch: u64,
 }
 
 /// The admin role moved to a new address (after propose → accept).

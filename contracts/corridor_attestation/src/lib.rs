@@ -74,16 +74,14 @@ impl CorridorAttestation {
         let pi = PublicInputs::decode(&env, &public_inputs)?;
 
         // 1. bind the proof to this corridor's current policy
-        if pi.credential_root != policy.credential_root
-            || pi.revocation_root != policy.revocation_root
-        {
-            return Err(Error::RootMismatch);
-        }
         if pi.corridor_id != corridor_id {
             return Err(Error::CorridorMismatch);
         }
         if pi.min_tier != policy.min_tier {
             return Err(Error::MinTierMismatch);
+        }
+        if pi.min_cred_epoch != policy.min_cred_epoch {
+            return Err(Error::CredEpochMismatch);
         }
         if !vec_contains(&policy.accepted_issuers, &pi.issuer_id) {
             return Err(Error::IssuerNotAccepted);

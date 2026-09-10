@@ -2,32 +2,34 @@ use soroban_sdk::{contracttype, Address, BytesN, Vec};
 
 /// The policy a corridor operator registers in `corridor_registry`.
 ///
-/// `credential_root` / `revocation_root` / `root_epoch` are *not* set by the
-/// operator directly — they are synced from Midnight via `post_root`.
+/// Option B: no synced Midnight roots. Eligibility is proven against an
+/// issuer's Grumpkin Schnorr signature; revocation is short credential expiry
+/// plus `min_cred_epoch`.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CorridorPolicy {
     /// Who may pause / update this policy.
     pub operator: Address,
-    /// Issuer ids this corridor accepts (checked against `PublicInputs::issuer_id`).
+    /// Issuer ids this corridor accepts — `Poseidon2(issuer_pk.x, issuer_pk.y)`
+    /// for each accepted issuer's Schnorr key. Checked against the proof's
+    /// `issuer_id` public input.
     pub accepted_issuers: Vec<BytesN<32>>,
     /// Minimum KYC tier required to pass (must equal the circuit's `min_tier`).
     pub min_tier: u32,
-    /// Bitmask of disclosures the corridor requires the holder to include.
+    /// Bitmask of disclosures the corridor requires. Reserved for selective
+    /// disclosure; currently only `auditor_pubkey != 0` is enforced.
     pub required_disclosures: u32,
-    /// Midnight credential-set Merkle root (synced).
-    pub credential_root: BytesN<32>,
-    /// Midnight revocation-set Merkle root (synced).
-    pub revocation_root: BytesN<32>,
-    /// Monotonic epoch of the synced roots.
-    pub root_epoch: u64,
+    /// Bulk-revocation floor: a credential's `cred_epoch` must be `>=` this.
+    /// The operator raises it (per issuer guidance) to invalidate everything
+    /// issued before an epoch.
+    pub min_cred_epoch: u64,
     /// Address of the ZK verifier contract this corridor trusts.
     pub verifier: Address,
     /// Hash of the verification key pinned for this corridor.
     pub vk_hash: BytesN<32>,
     /// The auditor public key passes must bind their `auditor_blob` to. All
-    /// zero = this corridor has no auditor and the blob is a throwaway
-    /// commitment. `enter` checks `public_inputs.auditor_pubkey` equals this.
+    /// zero = no auditor. `enter` checks `public_inputs.auditor_pubkey` equals
+    /// this.
     pub auditor_pubkey: BytesN<32>,
     /// Allowed skew between the proof's `now` and ledger time, in seconds.
     pub now_tolerance_secs: u64,

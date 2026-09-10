@@ -15,12 +15,10 @@ fn sample_policy(env: &Env, operator: &Address, verifier: &Address) -> CorridorP
         accepted_issuers: vec![env, BytesN::from_array(env, &[7u8; 32])],
         min_tier: 2,
         required_disclosures: 0,
-        credential_root: zero32(env),
-        revocation_root: zero32(env),
-        root_epoch: 0,
+        min_cred_epoch: 1,
         verifier: verifier.clone(),
         vk_hash: BytesN::from_array(env, &[9u8; 32]),
-        auditor_pubkey: BytesN::from_array(env, &[0u8; 32]),
+        auditor_pubkey: zero32(env),
         now_tolerance_secs: 300,
         paused: false,
     }
@@ -32,7 +30,6 @@ struct W {
     admin: Address,
     operator: Address,
     verifier: Address,
-    relayer: Address,
     cid: BytesN<32>,
 }
 
@@ -41,16 +38,12 @@ fn setup() -> W {
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let id = env.register(CorridorRegistry, (admin.clone(),));
-    let registry = CorridorRegistryClient::new(&env, &id);
-    let relayer = Address::generate(&env);
-    registry.set_relayer(&relayer, &true);
     W {
         env: env.clone(),
-        registry,
+        registry: CorridorRegistryClient::new(&env, &id),
         admin,
         operator: Address::generate(&env),
         verifier: Address::generate(&env),
-        relayer,
         cid: BytesN::from_array(&env, &[1u8; 32]),
     }
 }
@@ -66,7 +59,7 @@ fn register_and_read_back() {
     register(&w);
     let got = w.registry.get_policy(&w.cid);
     assert_eq!(got.min_tier, 2);
-    assert_eq!(got.root_epoch, 0);
+    assert_eq!(got.min_cred_epoch, 1);
     assert!(!got.paused);
 }
 
@@ -85,56 +78,14 @@ fn double_register_rejected() {
 }
 
 #[test]
-fn post_root_advances_epoch() {
+fn set_min_cred_epoch_is_monotonic() {
     let w = setup();
     register(&w);
-    let root = BytesN::from_array(&w.env, &[42u8; 32]);
-    w.registry
-        .post_root(&w.relayer, &w.cid, &root, &zero32(&w.env), &1);
-    let got = w.registry.get_policy(&w.cid);
-    assert_eq!(got.root_epoch, 1);
-    assert_eq!(got.credential_root, root);
-}
-
-#[test]
-fn post_root_rejects_a_non_allowlisted_relayer() {
-    let w = setup();
-    register(&w);
-    let stranger = Address::generate(&w.env);
+    w.registry.set_min_cred_epoch(&w.cid, &5);
+    assert_eq!(w.registry.get_policy(&w.cid).min_cred_epoch, 5);
     let err = w
         .registry
-        .try_post_root(&stranger, &w.cid, &zero32(&w.env), &zero32(&w.env), &1)
-        .err()
-        .unwrap()
-        .unwrap();
-    assert_eq!(err, Error::RelayerNotAllowed);
-}
-
-#[test]
-fn admin_can_revoke_a_relayer() {
-    let w = setup();
-    register(&w);
-    assert!(w.registry.is_relayer(&w.relayer));
-    w.registry.set_relayer(&w.relayer, &false);
-    assert!(!w.registry.is_relayer(&w.relayer));
-    let err = w
-        .registry
-        .try_post_root(&w.relayer, &w.cid, &zero32(&w.env), &zero32(&w.env), &1)
-        .err()
-        .unwrap()
-        .unwrap();
-    assert_eq!(err, Error::RelayerNotAllowed);
-}
-
-#[test]
-fn post_root_epoch_cannot_regress() {
-    let w = setup();
-    register(&w);
-    w.registry
-        .post_root(&w.relayer, &w.cid, &zero32(&w.env), &zero32(&w.env), &5);
-    let err = w
-        .registry
-        .try_post_root(&w.relayer, &w.cid, &zero32(&w.env), &zero32(&w.env), &5)
+        .try_set_min_cred_epoch(&w.cid, &4)
         .err()
         .unwrap()
         .unwrap();
@@ -156,12 +107,8 @@ fn admin_transfer_is_two_step() {
     let w = setup();
     assert_eq!(w.registry.admin(), w.admin);
     let new_admin = Address::generate(&w.env);
-
-    // nominate — role does not move yet
     w.registry.propose_admin(&new_admin);
     assert_eq!(w.registry.admin(), w.admin);
-
-    // accept — now it moves
     w.registry.accept_admin();
     assert_eq!(w.registry.admin(), new_admin);
 }
@@ -174,21 +121,13 @@ fn accept_admin_without_a_proposal_fails() {
 }
 
 #[test]
-fn update_policy_keeps_the_operator_and_roots() {
+fn update_policy_keeps_the_operator() {
     let w = setup();
     register(&w);
-    let root = BytesN::from_array(&w.env, &[42u8; 32]);
-    w.registry
-        .post_root(&w.relayer, &w.cid, &root, &zero32(&w.env), &3);
-
-    // try to change everything, including the operator and roots
     let mut evil = sample_policy(&w.env, &Address::generate(&w.env), &w.verifier);
     evil.min_tier = 4;
     w.registry.update_policy(&w.cid, &evil);
-
     let got = w.registry.get_policy(&w.cid);
-    assert_eq!(got.min_tier, 4); // operator-controlled field changed
-    assert_eq!(got.operator, w.operator); // operator preserved
-    assert_eq!(got.credential_root, root); // root preserved
-    assert_eq!(got.root_epoch, 3); // epoch preserved
+    assert_eq!(got.min_tier, 4);
+    assert_eq!(got.operator, w.operator);
 }

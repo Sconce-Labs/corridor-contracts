@@ -73,13 +73,16 @@ fn decode_preserves_numeric_fields_over_random_words() {
         let min_tier = rng.next() as u32;
         let now = rng.next();
         let tag = rng.next() as u32;
+        let epoch = rng.next();
         let mut raw = [[0u8; 32]; PI_LEN as usize];
-        raw[3] = u32_to_word(&env, min_tier).to_array();
-        raw[4] = u64_to_word(&env, now).to_array();
-        raw[6] = u32_to_word(&env, tag).to_array();
+        raw[crate::PI_MIN_TIER as usize] = u32_to_word(&env, min_tier).to_array();
+        raw[crate::PI_NOW as usize] = u64_to_word(&env, now).to_array();
+        raw[crate::PI_DISCLOSED_TAG as usize] = u32_to_word(&env, tag).to_array();
+        raw[crate::PI_MIN_CRED_EPOCH as usize] = u64_to_word(&env, epoch).to_array();
         let pi = PublicInputs::decode(&env, &words(&env, &raw)).unwrap();
         assert_eq!(pi.min_tier, min_tier);
         assert_eq!(pi.now, now);
         assert_eq!(pi.disclosed_tag, tag);
+        assert_eq!(pi.min_cred_epoch, epoch);
     }
 }

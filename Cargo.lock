@@ -1937,7 +1937,7 @@ dependencies = [
 [[package]]
 name = "soroban-poseidon"
 version = "27.0.0"
-source = "git+https://github.com/stellar/rs-soroban-poseidon#177970c51b83aede0a80ce0cb862382dddeddaa9"
+source = "git+https://github.com/stellar/rs-soroban-poseidon?rev=177970c51b83aede0a80ce0cb862382dddeddaa9#177970c51b83aede0a80ce0cb862382dddeddaa9"
 dependencies = [
  "soroban-sdk 27.0.6",
 ]

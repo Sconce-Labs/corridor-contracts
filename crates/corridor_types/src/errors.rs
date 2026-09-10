@@ -21,8 +21,10 @@ pub enum Error {
     NullifierUsed = 12,
     IssuerNotAccepted = 13,
     BadPublicInputs = 14,
+    /// Reused under Option B for `set_min_cred_epoch` monotonicity.
     RootEpochRegression = 15,
     RelayerNotAllowed = 16,
     NoPendingAdmin = 17,
     DisclosureMissing = 18,
+    CredEpochMismatch = 19,
 }

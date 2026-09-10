@@ -1,36 +1,38 @@
 //! The public-input layout — the ABI seam between the Noir circuit
 //! (`corridor-circuits`), the SDK (`corridor-sdk`), and this contract.
 //! Changing an index means changing all three plus `ABI.md`.
+//!
+//! Option B (issuer-signed statements): no credential/revocation roots.
 
 use crate::errors::Error;
 use soroban_sdk::{contracttype, BytesN, Env, Vec};
 
-pub const PI_LEN: u32 = 10;
-pub const PI_CREDENTIAL_ROOT: u32 = 0;
-pub const PI_REVOCATION_ROOT: u32 = 1;
-pub const PI_CORRIDOR_ID: u32 = 2;
-pub const PI_MIN_TIER: u32 = 3;
-pub const PI_NOW: u32 = 4;
-pub const PI_NULLIFIER: u32 = 5;
-pub const PI_DISCLOSED_TAG: u32 = 6;
-pub const PI_ISSUER_ID: u32 = 7;
-pub const PI_AUDITOR_PUBKEY: u32 = 8;
-pub const PI_AUDITOR_BLOB: u32 = 9;
+pub const PI_LEN: u32 = 9;
+pub const PI_CORRIDOR_ID: u32 = 0;
+pub const PI_MIN_TIER: u32 = 1;
+pub const PI_NOW: u32 = 2;
+pub const PI_NULLIFIER: u32 = 3;
+pub const PI_DISCLOSED_TAG: u32 = 4;
+pub const PI_ISSUER_ID: u32 = 5;
+pub const PI_MIN_CRED_EPOCH: u32 = 6;
+pub const PI_AUDITOR_PUBKEY: u32 = 7;
+pub const PI_AUDITOR_BLOB: u32 = 8;
 
 /// Typed view over the raw field-element vector the verifier consumes.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PublicInputs {
-    pub credential_root: BytesN<32>,
-    pub revocation_root: BytesN<32>,
     pub corridor_id: BytesN<32>,
     pub min_tier: u32,
     pub now: u64,
     pub nullifier: BytesN<32>,
     pub disclosed_tag: u32,
+    /// `Poseidon2(issuer_pk.x, issuer_pk.y)` — matched against the policy's
+    /// `accepted_issuers`.
     pub issuer_id: BytesN<32>,
-    /// The auditor public key the blob is bound to — the contract checks this
-    /// equals `policy.auditor_pubkey` (both zero = no auditor).
+    /// Bulk-revocation floor — must equal `policy.min_cred_epoch`.
+    pub min_cred_epoch: u64,
+    /// Auditor key the blob binds to — must equal `policy.auditor_pubkey`.
     pub auditor_pubkey: BytesN<32>,
     pub auditor_blob: BytesN<32>,
 }
@@ -43,14 +45,13 @@ impl PublicInputs {
             return Err(Error::BadPublicInputs);
         }
         Ok(PublicInputs {
-            credential_root: raw.get_unchecked(PI_CREDENTIAL_ROOT),
-            revocation_root: raw.get_unchecked(PI_REVOCATION_ROOT),
             corridor_id: raw.get_unchecked(PI_CORRIDOR_ID),
             min_tier: word_to_u32(&raw.get_unchecked(PI_MIN_TIER)),
             now: word_to_u64(&raw.get_unchecked(PI_NOW)),
             nullifier: raw.get_unchecked(PI_NULLIFIER),
             disclosed_tag: word_to_u32(&raw.get_unchecked(PI_DISCLOSED_TAG)),
             issuer_id: raw.get_unchecked(PI_ISSUER_ID),
+            min_cred_epoch: word_to_u64(&raw.get_unchecked(PI_MIN_CRED_EPOCH)),
             auditor_pubkey: raw.get_unchecked(PI_AUDITOR_PUBKEY),
             auditor_blob: raw.get_unchecked(PI_AUDITOR_BLOB),
         })
