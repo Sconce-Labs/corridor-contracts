@@ -3,13 +3,20 @@
 //! policy. Corridor operators register a [`CorridorPolicy`]; a relayer keeps
 //! the Midnight-derived roots fresh via [`post_root`].
 
+mod events;
+use events::{PausedSet, PolicyUpdated, Registered, RootPosted};
+
 use corridor_types::{CorridorPolicy, Error};
-use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, BytesN, Env};
+use soroban_sdk::{contract, contractimpl, contracttype, Address, BytesN, Env};
 
 #[contracttype]
 enum DataKey {
     Admin,
     Policy(BytesN<32>),
+}
+
+fn zero32(env: &Env) -> BytesN<32> {
+    BytesN::from_array(env, &[0u8; 32])
 }
 
 #[contract]
@@ -26,9 +33,15 @@ impl CorridorRegistry {
         env.storage().instance().get(&DataKey::Admin).unwrap()
     }
 
+    /// Hand the admin role to a new address. Current admin authorizes.
+    pub fn transfer_admin(env: Env, new_admin: Address) {
+        let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
+        admin.require_auth();
+        env.storage().instance().set(&DataKey::Admin, &new_admin);
+    }
+
     /// Register a new corridor. The caller must authorize as `policy.operator`.
-    /// Root fields on the incoming policy are ignored and start empty — they
-    /// are only ever set by [`post_root`].
+    /// Root fields on the incoming policy are ignored and start empty.
     pub fn register(
         env: Env,
         corridor_id: BytesN<32>,
@@ -42,14 +55,18 @@ impl CorridorRegistry {
         {
             return Err(Error::PolicyExists);
         }
-        policy.credential_root = BytesN::from_array(&env, &[0u8; 32]);
-        policy.revocation_root = BytesN::from_array(&env, &[0u8; 32]);
+        policy.credential_root = zero32(&env);
+        policy.revocation_root = zero32(&env);
         policy.root_epoch = 0;
         env.storage()
             .persistent()
             .set(&DataKey::Policy(corridor_id.clone()), &policy);
-        env.events()
-            .publish((symbol_short!("REG"), corridor_id), policy.min_tier);
+        Registered {
+            corridor_id,
+            operator: policy.operator,
+            min_tier: policy.min_tier,
+        }
+        .publish(&env);
         Ok(())
     }
 
@@ -83,7 +100,13 @@ impl CorridorRegistry {
         };
         env.storage()
             .persistent()
-            .set(&DataKey::Policy(corridor_id), &merged);
+            .set(&DataKey::Policy(corridor_id.clone()), &merged);
+        PolicyUpdated {
+            corridor_id,
+            min_tier: merged.min_tier,
+            paused: merged.paused,
+        }
+        .publish(&env);
         Ok(())
     }
 
@@ -97,14 +120,18 @@ impl CorridorRegistry {
         policy.paused = paused;
         env.storage()
             .persistent()
-            .set(&DataKey::Policy(corridor_id), &policy);
+            .set(&DataKey::Policy(corridor_id.clone()), &policy);
+        PausedSet {
+            corridor_id,
+            paused,
+        }
+        .publish(&env);
         Ok(())
     }
 
     /// Sync a fresh Midnight root onto a corridor's policy. `epoch` must strictly
-    /// increase. MVP: any address may relay, but every post emits a `ROOT`
-    /// event tagged with the relayer. M5 replaces this with a relayer allowlist
-    /// / multi-relayer majority.
+    /// increase. MVP: any address may relay; every post emits a `RootPosted`
+    /// event tagged with the relayer. M5 adds a relayer allowlist / quorum.
     pub fn post_root(
         env: Env,
         relayer: Address,
@@ -122,14 +149,20 @@ impl CorridorRegistry {
         if epoch <= policy.root_epoch {
             return Err(Error::RootEpochRegression);
         }
-        policy.credential_root = credential_root;
-        policy.revocation_root = revocation_root;
+        policy.credential_root = credential_root.clone();
+        policy.revocation_root = revocation_root.clone();
         policy.root_epoch = epoch;
         env.storage()
             .persistent()
             .set(&DataKey::Policy(corridor_id.clone()), &policy);
-        env.events()
-            .publish((symbol_short!("ROOT"), corridor_id, relayer), epoch);
+        RootPosted {
+            corridor_id,
+            relayer,
+            epoch,
+            credential_root,
+            revocation_root,
+        }
+        .publish(&env);
         Ok(())
     }
 }
