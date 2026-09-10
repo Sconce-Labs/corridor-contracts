@@ -22,4 +22,7 @@ pub enum Error {
     IssuerNotAccepted = 13,
     BadPublicInputs = 14,
     RootEpochRegression = 15,
+    RelayerNotAllowed = 16,
+    NoPendingAdmin = 17,
+    DisclosureMissing = 18,
 }
