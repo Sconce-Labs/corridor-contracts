@@ -10,10 +10,16 @@ portable, zero-knowledge proof of eligibility for cross-border payments.
 
 This workspace holds the Soroban contracts that a corridor operator deploys and
 integrates against: the **policy registry**, the **attestation contract** that
-verifies a holder's ZK proof and burns a per-corridor nullifier, and the
-**verifier** behind a stable interface. It is the **source of truth for the
-public-input ABI** ([`ABI.md`](./ABI.md)) that the Noir circuit and the SDK must
-match.
+binds a holder's ZK proof to the corridor policy, calls the policy's verifier,
+and burns a per-corridor nullifier, and the **verifier** behind a stable
+interface. It is the **source of truth for the public-input ABI**
+([`ABI.md`](./ABI.md)) that the Noir circuit and the SDK must match.
+
+> **The policy binding is live on testnet; the ZK verifier is a mock** that
+> returns `true` until the real UltraHonk verifier lands (milestone **M3** —
+> [#1](https://github.com/Sconce-Labs/corridor-contracts/issues/1)). Until then,
+> `is_cleared` on testnet attests the policy binding and one-time use, **not**
+> the cryptographic proof.
 
 | | |
 |---|---|
