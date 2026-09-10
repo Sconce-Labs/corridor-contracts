@@ -1,10 +1,10 @@
 #![no_std]
 //! `corridor_registry` — the directory of payment corridors and their KYC
-//! policy. Corridor operators register a [`CorridorPolicy`]; a relayer keeps
-//! the Midnight-derived roots fresh via [`post_root`].
+//! policy. Corridor operators register a [`CorridorPolicy`]; an **allowlisted**
+//! relayer keeps the Midnight-derived roots fresh via [`post_root`].
 
 mod events;
-use events::{PausedSet, PolicyUpdated, Registered, RootPosted};
+use events::{AdminTransferred, PausedSet, PolicyUpdated, RegisteredEvent, RelayerSet, RootPosted};
 
 use corridor_types::{CorridorPolicy, Error};
 use soroban_sdk::{contract, contractimpl, contracttype, Address, BytesN, Env};
@@ -12,6 +12,9 @@ use soroban_sdk::{contract, contractimpl, contracttype, Address, BytesN, Env};
 #[contracttype]
 enum DataKey {
     Admin,
+    PendingAdmin,
+    /// relayer -> allowed? (absent = not allowed)
+    Relayer(Address),
     Policy(BytesN<32>),
 }
 
@@ -19,26 +22,74 @@ fn zero32(env: &Env) -> BytesN<32> {
     BytesN::from_array(env, &[0u8; 32])
 }
 
+fn read_admin(env: &Env) -> Address {
+    env.storage().instance().get(&DataKey::Admin).unwrap()
+}
+
 #[contract]
 pub struct CorridorRegistry;
 
 #[contractimpl]
 impl CorridorRegistry {
-    /// Deploy-time constructor. `admin` can later gate relayers (M5).
+    /// Deploy-time constructor. `admin` manages the relayer allowlist.
     pub fn __constructor(env: Env, admin: Address) {
         env.storage().instance().set(&DataKey::Admin, &admin);
     }
 
     pub fn admin(env: Env) -> Address {
-        env.storage().instance().get(&DataKey::Admin).unwrap()
+        read_admin(&env)
     }
 
-    /// Hand the admin role to a new address. Current admin authorizes.
-    pub fn transfer_admin(env: Env, new_admin: Address) {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
-        admin.require_auth();
-        env.storage().instance().set(&DataKey::Admin, &new_admin);
+    // ── admin transfer: propose → accept ────────────────────────────────────
+
+    /// Step 1: the current admin nominates a successor.
+    pub fn propose_admin(env: Env, new_admin: Address) {
+        read_admin(&env).require_auth();
+        env.storage()
+            .instance()
+            .set(&DataKey::PendingAdmin, &new_admin);
     }
+
+    /// Step 2: the nominee accepts. Prevents locking the role to a typo'd address.
+    pub fn accept_admin(env: Env) -> Result<(), Error> {
+        let pending: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::PendingAdmin)
+            .ok_or(Error::NoPendingAdmin)?;
+        pending.require_auth();
+        let old = read_admin(&env);
+        env.storage().instance().set(&DataKey::Admin, &pending);
+        env.storage().instance().remove(&DataKey::PendingAdmin);
+        AdminTransferred { old, new: pending }.publish(&env);
+        Ok(())
+    }
+
+    // ── relayer allowlist ──────────────────────────────────────────────────
+
+    /// Admin adds/removes a relayer permitted to call [`post_root`].
+    pub fn set_relayer(env: Env, relayer: Address, allowed: bool) {
+        read_admin(&env).require_auth();
+        if allowed {
+            env.storage()
+                .persistent()
+                .set(&DataKey::Relayer(relayer.clone()), &true);
+        } else {
+            env.storage()
+                .persistent()
+                .remove(&DataKey::Relayer(relayer.clone()));
+        }
+        RelayerSet { relayer, allowed }.publish(&env);
+    }
+
+    pub fn is_relayer(env: Env, relayer: Address) -> bool {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Relayer(relayer))
+            .unwrap_or(false)
+    }
+
+    // ── corridors ─────────────────────────────────────────────────────────
 
     /// Register a new corridor. The caller must authorize as `policy.operator`.
     /// Root fields on the incoming policy are ignored and start empty.
@@ -61,7 +112,7 @@ impl CorridorRegistry {
         env.storage()
             .persistent()
             .set(&DataKey::Policy(corridor_id.clone()), &policy);
-        Registered {
+        RegisteredEvent {
             corridor_id,
             operator: policy.operator,
             min_tier: policy.min_tier,
@@ -77,8 +128,8 @@ impl CorridorRegistry {
             .ok_or(Error::PolicyNotFound)
     }
 
-    /// Update the operator-controlled fields. Operator auth required. Root
-    /// fields and the operator address are preserved from the stored policy.
+    /// Update the operator-controlled fields. Operator auth required. The
+    /// operator address and the synced root fields are preserved.
     pub fn update_policy(
         env: Env,
         corridor_id: BytesN<32>,
@@ -104,6 +155,9 @@ impl CorridorRegistry {
         PolicyUpdated {
             corridor_id,
             min_tier: merged.min_tier,
+            required_disclosures: merged.required_disclosures,
+            verifier: merged.verifier,
+            vk_hash: merged.vk_hash,
             paused: merged.paused,
         }
         .publish(&env);
@@ -129,9 +183,9 @@ impl CorridorRegistry {
         Ok(())
     }
 
-    /// Sync a fresh Midnight root onto a corridor's policy. `epoch` must strictly
-    /// increase. MVP: any address may relay; every post emits a `RootPosted`
-    /// event tagged with the relayer. M5 adds a relayer allowlist / quorum.
+    /// Sync a fresh Midnight root onto a corridor's policy. The `relayer` must be
+    /// on the admin's allowlist and `epoch` must strictly increase. Every post
+    /// emits a `RootPosted` event tagged with the relayer.
     pub fn post_root(
         env: Env,
         relayer: Address,
@@ -141,6 +195,14 @@ impl CorridorRegistry {
         epoch: u64,
     ) -> Result<(), Error> {
         relayer.require_auth();
+        if !env
+            .storage()
+            .persistent()
+            .get(&DataKey::Relayer(relayer.clone()))
+            .unwrap_or(false)
+        {
+            return Err(Error::RelayerNotAllowed);
+        }
         let mut policy: CorridorPolicy = env
             .storage()
             .persistent()
