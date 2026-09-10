@@ -36,6 +36,14 @@
                     },
                     {
                       "key": {
+                        "symbol": "auditor_pubkey"
+                      },
+                      "val": {
+                        "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+                      }
+                    },
+                    {
+                      "key": {
                         "symbol": "credential_root"
                       },
                       "val": {
@@ -320,6 +328,14 @@
                   },
                   {
                     "key": {
+                      "symbol": "auditor_pubkey"
+                    },
+                    "val": {
+                      "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+                    }
+                  },
+                  {
+                    "key": {
                       "symbol": "credential_root"
                     },
                     "val": {
@@ -530,7 +546,7 @@
           },
           "ext": "v0"
         },
-        "live_until": 518400
+        "live_until": 6311999
       },
       {
         "entry": {
@@ -593,7 +609,7 @@
           },
           "ext": "v0"
         },
-        "live_until": 518400
+        "live_until": 6311999
       },
       {
         "entry": {
@@ -620,7 +636,7 @@
           },
           "ext": "v0"
         },
-        "live_until": 4095
+        "live_until": 6311999
       },
       {
         "entry": {

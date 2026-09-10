@@ -12,20 +12,32 @@ Canonical definition: `crates/corridor_types/src/abi.rs` (`PI_*` constants and
 
 ## Layout
 
-`public_inputs` is a `Vec<BytesN<32>>` of length **9**. Each entry is a 32-byte
+`public_inputs` is a `Vec<BytesN<32>>` of length **10**. Each entry is a 32-byte
 big-endian word.
 
 | idx | const | field | encoding |
 |----:|-------|-------|----------|
 | 0 | `PI_CREDENTIAL_ROOT` | `credential_root` | 32-byte field element |
-| 1 | `PI_REVOCATION_ROOT` | `revocation_root` | 32-byte field element |
+| 1 | `PI_REVOCATION_ROOT` | `revocation_root` | 32-byte field element — **indexed Merkle tree** root |
 | 2 | `PI_CORRIDOR_ID` | `corridor_id` | 32-byte id |
 | 3 | `PI_MIN_TIER` | `min_tier` | `u32` in the low 4 bytes |
 | 4 | `PI_NOW` | `now` | `u64` in the low 8 bytes |
 | 5 | `PI_NULLIFIER` | `nullifier` | 32-byte field element, `Poseidon2(holder_secret, corridor_id)` |
 | 6 | `PI_DISCLOSED_TAG` | `disclosed_tag` | `u32` in the low 4 bytes, `< 16` |
 | 7 | `PI_ISSUER_ID` | `issuer_id` | 32-byte id |
-| 8 | `PI_AUDITOR_BLOB` | `auditor_blob` | 32-byte commitment/ciphertext handle |
+| 8 | `PI_AUDITOR_PUBKEY` | `auditor_pubkey` | 32-byte key — must equal `policy.auditor_pubkey` (`0` = no auditor) |
+| 9 | `PI_AUDITOR_BLOB` | `auditor_blob` | `Poseidon2(auditor_pubkey, tier, issuer_id, nullifier, auditor_nonce)` |
+
+### Revocation (indexed Merkle tree)
+
+`revocation_root` is the root of an **indexed Merkle tree** keyed by
+`imtKey(Poseidon2(commitment))` = the low 248 bits. A credential proves
+*non*-revocation with a **low-leaf range proof**: the private witness carries
+`rev_low_{value,next_index,next_value}` + its inclusion path, and the circuit
+checks `low.value < key < low.next_value` (or the low leaf is the tail). A
+revoked credential's key *is* a leaf, so no valid low leaf exists → the proof
+fails with `"credential revoked"`. This replaces the earlier sparse-position
+check, which was a no-op against an append-only tree (audit C1).
 
 ## Contract checks (in `corridor_attestation::enter`)
 

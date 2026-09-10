@@ -88,6 +88,10 @@ impl CorridorAttestation {
         if !vec_contains(&policy.accepted_issuers, &pi.issuer_id) {
             return Err(Error::IssuerNotAccepted);
         }
+        // the proof must bind its auditor blob to this corridor's auditor key
+        if pi.auditor_pubkey != policy.auditor_pubkey {
+            return Err(Error::DisclosureMissing);
+        }
         let ts = env.ledger().timestamp();
         let skew = if ts > pi.now {
             ts - pi.now

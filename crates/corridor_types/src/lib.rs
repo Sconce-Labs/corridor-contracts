@@ -19,8 +19,8 @@ mod policy;
 
 pub use abi::{
     u32_to_word, u64_to_word, word_to_u32, word_to_u64, PublicInputs, PI_AUDITOR_BLOB,
-    PI_CORRIDOR_ID, PI_CREDENTIAL_ROOT, PI_DISCLOSED_TAG, PI_ISSUER_ID, PI_LEN, PI_MIN_TIER,
-    PI_NOW, PI_NULLIFIER, PI_REVOCATION_ROOT,
+    PI_AUDITOR_PUBKEY, PI_CORRIDOR_ID, PI_CREDENTIAL_ROOT, PI_DISCLOSED_TAG, PI_ISSUER_ID, PI_LEN,
+    PI_MIN_TIER, PI_NOW, PI_NULLIFIER, PI_REVOCATION_ROOT,
 };
 pub use errors::Error;
 pub use interfaces::{RegistryClient, RegistryInterface, Verifier, VerifierClient};

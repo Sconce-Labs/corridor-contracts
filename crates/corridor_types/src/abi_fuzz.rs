@@ -73,7 +73,7 @@ fn decode_preserves_numeric_fields_over_random_words() {
         let min_tier = rng.next() as u32;
         let now = rng.next();
         let tag = rng.next() as u32;
-        let mut raw = [[0u8; 32]; 9];
+        let mut raw = [[0u8; 32]; PI_LEN as usize];
         raw[3] = u32_to_word(&env, min_tier).to_array();
         raw[4] = u64_to_word(&env, now).to_array();
         raw[6] = u32_to_word(&env, tag).to_array();

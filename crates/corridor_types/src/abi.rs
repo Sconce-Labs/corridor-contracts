@@ -5,7 +5,7 @@
 use crate::errors::Error;
 use soroban_sdk::{contracttype, BytesN, Env, Vec};
 
-pub const PI_LEN: u32 = 9;
+pub const PI_LEN: u32 = 10;
 pub const PI_CREDENTIAL_ROOT: u32 = 0;
 pub const PI_REVOCATION_ROOT: u32 = 1;
 pub const PI_CORRIDOR_ID: u32 = 2;
@@ -14,7 +14,8 @@ pub const PI_NOW: u32 = 4;
 pub const PI_NULLIFIER: u32 = 5;
 pub const PI_DISCLOSED_TAG: u32 = 6;
 pub const PI_ISSUER_ID: u32 = 7;
-pub const PI_AUDITOR_BLOB: u32 = 8;
+pub const PI_AUDITOR_PUBKEY: u32 = 8;
+pub const PI_AUDITOR_BLOB: u32 = 9;
 
 /// Typed view over the raw field-element vector the verifier consumes.
 #[contracttype]
@@ -28,6 +29,9 @@ pub struct PublicInputs {
     pub nullifier: BytesN<32>,
     pub disclosed_tag: u32,
     pub issuer_id: BytesN<32>,
+    /// The auditor public key the blob is bound to — the contract checks this
+    /// equals `policy.auditor_pubkey` (both zero = no auditor).
+    pub auditor_pubkey: BytesN<32>,
     pub auditor_blob: BytesN<32>,
 }
 
@@ -47,6 +51,7 @@ impl PublicInputs {
             nullifier: raw.get_unchecked(PI_NULLIFIER),
             disclosed_tag: word_to_u32(&raw.get_unchecked(PI_DISCLOSED_TAG)),
             issuer_id: raw.get_unchecked(PI_ISSUER_ID),
+            auditor_pubkey: raw.get_unchecked(PI_AUDITOR_PUBKEY),
             auditor_blob: raw.get_unchecked(PI_AUDITOR_BLOB),
         })
     }

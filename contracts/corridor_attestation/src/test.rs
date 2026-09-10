@@ -56,6 +56,7 @@ fn setup() -> World {
         root_epoch: 0,
         verifier: verifier_id.clone(),
         vk_hash: b32(&env, [9u8; 32]),
+        auditor_pubkey: b32(&env, [0u8; 32]),
         now_tolerance_secs: 300,
         paused: false,
     };
@@ -91,7 +92,8 @@ fn good_inputs(env: &Env) -> Vec<BytesN<32>> {
     v.push_back(b32(env, NULLIFIER)); // 5 nullifier
     v.push_back(u32_to_word(env, 1)); // 6 disclosed_tag
     v.push_back(b32(env, ISSUER)); //   7 issuer_id
-    v.push_back(b32(env, [0u8; 32])); // 8 auditor_blob
+    v.push_back(b32(env, [0u8; 32])); // 8 auditor_pubkey (no auditor)
+    v.push_back(b32(env, [0u8; 32])); // 9 auditor_blob
     assert_eq!(v.len(), PI_LEN);
     v
 }
@@ -195,6 +197,24 @@ fn rejects_unaccepted_issuer() {
 }
 
 #[test]
+fn rejects_a_proof_with_the_wrong_auditor_pubkey() {
+    let w = setup();
+    let env = &w.env;
+    // the corridor policy has auditor_pubkey = 0 (no auditor); a proof that
+    // claims some other auditor key must be rejected.
+    let mut v = good_inputs(env);
+    v.set(8, b32(env, [0xab; 32])); // auditor_pubkey ≠ policy's
+    let proof = Bytes::from_array(env, &[0xaa; 8]);
+    let err = w
+        .attestation
+        .try_enter(&w.cid, &proof, &v)
+        .err()
+        .unwrap()
+        .unwrap();
+    assert_eq!(err, Error::DisclosureMissing);
+}
+
+#[test]
 fn rejects_clock_skew_beyond_tolerance() {
     let w = setup();
     let env = &w.env;
@@ -258,6 +278,7 @@ fn different_corridors_have_independent_nullifiers() {
         root_epoch: 0,
         verifier: w.verifier.address.clone(),
         vk_hash: b32(env, [9u8; 32]),
+        auditor_pubkey: b32(env, [0u8; 32]),
         now_tolerance_secs: 300,
         paused: false,
     };

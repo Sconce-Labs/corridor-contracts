@@ -25,6 +25,10 @@ pub struct CorridorPolicy {
     pub verifier: Address,
     /// Hash of the verification key pinned for this corridor.
     pub vk_hash: BytesN<32>,
+    /// The auditor public key passes must bind their `auditor_blob` to. All
+    /// zero = this corridor has no auditor and the blob is a throwaway
+    /// commitment. `enter` checks `public_inputs.auditor_pubkey` equals this.
+    pub auditor_pubkey: BytesN<32>,
     /// Allowed skew between the proof's `now` and ledger time, in seconds.
     pub now_tolerance_secs: u64,
     /// Kill switch — when true, `enter` rejects every proof.
