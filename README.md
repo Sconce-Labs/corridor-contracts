@@ -36,18 +36,19 @@ export-table limit hit by soroban-sdk's dependency tree.
 
 ## Testnet deployment
 
-> **Stale — pending redeploy.** The addresses in
-> [`deployments/testnet.json`](./deployments/testnet.json) ran the pre-Option-B
-> ABI (10 public inputs, synced roots, `post_root`). The current contracts use
-> the 9-input Option B ABI. A redeploy + refreshed record is
-> [corridor ROADMAP](https://github.com/Sconce-Labs/corridor/blob/main/ROADMAP.md)
-> **M2**.
+Option B ABI (9 public inputs), deployed 2026-09-10 —
+[`deployments/testnet.json`](./deployments/testnet.json):
 
-The earlier run verified `register` → `post_root` → `enter` → `is_cleared ==
-true` with replay rejected; `post_root` no longer exists.
+| Contract | Address |
+|----------|---------|
+| `corridor_registry` | `CAV6DMVCBOU5DGQVFSPU2UIF62LNFW7PWAGC7HCPHVIUO6SWRPSX3B65` |
+| `corridor_attestation` | `CD76SRVQS6QSDFL2DYWGPK2JGWQPZO4NBFOGRDR5UWLGCABLBONNUXK5` |
+| `verifier_mock` (placeholder — M3) | `CBN7N7AT7CPAA7MBIAULEBY3GIV7NNB3XPNEUJSIAHFIM5BJ7GIGK46Y` |
 
-Deploy your own: `scripts/deploy_testnet.sh`, then `scripts/demo.sh` (both
-being updated for Option B alongside the M2 redeploy).
+Smoke-verified: `register → enter` (PassGranted, tag 1, passes 1) `→ is_cleared
+== true`; replay rejected with `NullifierUsed` (Error #12).
+
+Deploy your own: `scripts/deploy_testnet.sh`, then `scripts/demo.sh`.
 
 ## Integration for a corridor operator
 

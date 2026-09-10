@@ -2,19 +2,35 @@
   "network": "testnet",
   "networkPassphrase": "Test SDF Network ; September 2015",
   "rpcUrl": "https://soroban-testnet.stellar.org",
+  "abi": "option-b",
   "deployedAt": "2026-09-10",
   "deployer": "GATI44YBCQ67LZOKSE4R7C7QOKJU7F4DQBMSR4CBGC5YZ7TQRYWCJR2O",
   "contracts": {
-    "verifier_mock": "CDT4ZVOIAI5JN4TC3WZYIBJ3NOJENZWKD2ZNOTSVVZBZBZ5GMOSNJEQP",
-    "corridor_registry": "CB6LZV6TJN6YZ2O7FVLNRCJMRVBXCDG6JFFREHGY2BD5K4EYWJ6WKT2K",
-    "corridor_attestation": "CCAGXABIZWHNLA754LSQCFPA35VLJZEH24MD5OGJNIEMFQHZ7LWQD5AR"
+    "verifier_mock": "CBN7N7AT7CPAA7MBIAULEBY3GIV7NNB3XPNEUJSIAHFIM5BJ7GIGK46Y",
+    "corridor_registry": "CAV6DMVCBOU5DGQVFSPU2UIF62LNFW7PWAGC7HCPHVIUO6SWRPSX3B65",
+    "corridor_attestation": "CD76SRVQS6QSDFL2DYWGPK2JGWQPZO4NBFOGRDR5UWLGCABLBONNUXK5"
+  },
+  "deployTx": {
+    "verifier_mock": "8e76dd9d33bd7a523567a9a6eece253e7293b352a0bcaab66d653978e0fd7b3c",
+    "corridor_registry": "c61f8104491dec5c287a7f729868b7139fd0ab84308e1b4f6b448051818b618f",
+    "corridor_attestation": "2588b24a77eed215a1cd67ebbd3ada02e26792d66e1aca5fc1a0f7fcd4476498"
   },
   "smokeTest": {
     "corridor_id": "0x0000000000000000000000000000000000000000000000000000000000000004",
-    "register_tx": "43d20c22e25c51a9bce4ffede6a37e002d14a5fe5906465bf9bacdaa72448a08",
-    "post_root_tx": "fd102ada32f6b5a4e022111fc0fb6904f423b29fedbaa7205fad06ec40e26940",
-    "enter_tx": "4d7df1e0f1eb7cf3032f99a0d2619bc38a167094c0b3b8ea10e7b83c56d580ea",
-    "result": "is_cleared == true, passes == 1, replay rejected with Error #12 (NullifierUsed)"
+    "register_tx": "1a41964c6d0398ea73f38e31a905f8d0bacdea834b0d95c480701b2e11dc9fac",
+    "enter_tx": "451fa970600851e822363f32ef7eca4be67f9b8f7cd6966082e326230f0620a0",
+    "publicInputs": [
+      "corridor_id",
+      "min_tier",
+      "now",
+      "nullifier",
+      "disclosed_tag",
+      "issuer_id",
+      "min_cred_epoch",
+      "auditor_pubkey",
+      "auditor_blob"
+    ],
+    "result": "register -> enter (PassGranted, tag 1, passes 1) -> is_cleared == true; replay rejected with Error #12 (NullifierUsed)"
   },
-  "notes": "verifier_mock is a placeholder that returns true — see ROADMAP.md M3 for the real UltraHonk verifier."
+  "notes": "Option B ABI (9 public inputs, issuer-signed statements; no post_root). verifier_mock is a placeholder that returns true — see ROADMAP.md M3 for the real UltraHonk verifier."
 }
