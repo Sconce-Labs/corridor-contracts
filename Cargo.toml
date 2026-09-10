@@ -6,6 +6,7 @@ members = [
     "contracts/corridor_registry",
     "contracts/corridor_attestation",
     "contracts/verifier_mock",
+    "contracts/ultrahonk_verifier",
 ]
 
 [workspace.package]
