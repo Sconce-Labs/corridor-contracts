@@ -39,47 +39,64 @@ pub struct PublicInputs {
 
 impl PublicInputs {
     /// Decode the raw 32-byte words. Numeric fields are big-endian in the low
-    /// bytes of their word. `Error::BadPublicInputs` on a length mismatch.
+    /// bytes of their word; the high bytes **must be zero** (the circuit
+    /// range-constrains these as `u32` / `u64`, so a non-canonical word is a
+    /// malformed proof). `Error::BadPublicInputs` on a length mismatch or a
+    /// non-canonical numeric word.
     pub fn decode(_env: &Env, raw: &Vec<BytesN<32>>) -> Result<PublicInputs, Error> {
         if raw.len() != PI_LEN {
             return Err(Error::BadPublicInputs);
         }
         Ok(PublicInputs {
             corridor_id: raw.get_unchecked(PI_CORRIDOR_ID),
-            min_tier: word_to_u32(&raw.get_unchecked(PI_MIN_TIER)),
-            now: word_to_u64(&raw.get_unchecked(PI_NOW)),
+            min_tier: word_to_u32(&raw.get_unchecked(PI_MIN_TIER))?,
+            now: word_to_u64(&raw.get_unchecked(PI_NOW))?,
             nullifier: raw.get_unchecked(PI_NULLIFIER),
-            disclosed_tag: word_to_u32(&raw.get_unchecked(PI_DISCLOSED_TAG)),
+            disclosed_tag: word_to_u32(&raw.get_unchecked(PI_DISCLOSED_TAG))?,
             issuer_id: raw.get_unchecked(PI_ISSUER_ID),
-            min_cred_epoch: word_to_u64(&raw.get_unchecked(PI_MIN_CRED_EPOCH)),
+            min_cred_epoch: word_to_u64(&raw.get_unchecked(PI_MIN_CRED_EPOCH))?,
             auditor_pubkey: raw.get_unchecked(PI_AUDITOR_PUBKEY),
             auditor_blob: raw.get_unchecked(PI_AUDITOR_BLOB),
         })
     }
 }
 
-/// Big-endian `u64` from the low 8 bytes of a word.
-pub fn word_to_u64(w: &BytesN<32>) -> u64 {
+/// Big-endian `u64` from the low 8 bytes of a word. `Err(BadPublicInputs)` if
+/// any of the high 24 bytes is non-zero.
+pub fn word_to_u64(w: &BytesN<32>) -> Result<u64, Error> {
     let a = w.to_array();
+    let mut i = 0usize;
+    while i < 24 {
+        if a[i] != 0 {
+            return Err(Error::BadPublicInputs);
+        }
+        i += 1;
+    }
     let mut v = 0u64;
-    let mut i = 24usize;
     while i < 32 {
         v = (v << 8) | a[i] as u64;
         i += 1;
     }
-    v
+    Ok(v)
 }
 
-/// Big-endian `u32` from the low 4 bytes of a word.
-pub fn word_to_u32(w: &BytesN<32>) -> u32 {
+/// Big-endian `u32` from the low 4 bytes of a word. `Err(BadPublicInputs)` if
+/// any of the high 28 bytes is non-zero.
+pub fn word_to_u32(w: &BytesN<32>) -> Result<u32, Error> {
     let a = w.to_array();
+    let mut i = 0usize;
+    while i < 28 {
+        if a[i] != 0 {
+            return Err(Error::BadPublicInputs);
+        }
+        i += 1;
+    }
     let mut v = 0u32;
-    let mut i = 28usize;
     while i < 32 {
         v = (v << 8) | a[i] as u32;
         i += 1;
     }
-    v
+    Ok(v)
 }
 
 /// Encode a `u64` into the low 8 bytes of a 32-byte word (test/relayer helper).
@@ -124,11 +141,28 @@ mod test {
     fn word_round_trips() {
         let env = Env::default();
         for v in [0u64, 1, 255, 256, 1_000_000, u32::MAX as u64, u64::MAX] {
-            assert_eq!(word_to_u64(&u64_to_word(&env, v)), v);
+            assert_eq!(word_to_u64(&u64_to_word(&env, v)).unwrap(), v);
         }
         for v in [0u32, 1, 255, 65_535, u32::MAX] {
-            assert_eq!(word_to_u32(&u32_to_word(&env, v)), v);
+            assert_eq!(word_to_u32(&u32_to_word(&env, v)).unwrap(), v);
         }
+    }
+
+    #[test]
+    fn word_rejects_non_canonical_high_bytes() {
+        let env = Env::default();
+        let mut a = [0u8; 32];
+        a[23] = 1; // one bit above the u64 range
+        assert_eq!(
+            word_to_u64(&BytesN::from_array(&env, &a)).unwrap_err(),
+            Error::BadPublicInputs
+        );
+        let mut b = [0u8; 32];
+        b[27] = 1; // one bit above the u32 range
+        assert_eq!(
+            word_to_u32(&BytesN::from_array(&env, &b)).unwrap_err(),
+            Error::BadPublicInputs
+        );
     }
 
     #[test]
@@ -137,6 +171,23 @@ mod test {
         let short: Vec<BytesN<32>> = Vec::new(&env);
         assert_eq!(
             PublicInputs::decode(&env, &short).unwrap_err(),
+            Error::BadPublicInputs
+        );
+    }
+
+    #[test]
+    fn decode_rejects_a_non_canonical_min_tier_word() {
+        let env = Env::default();
+        let mut words: Vec<BytesN<32>> = Vec::new(&env);
+        for i in 0..PI_LEN {
+            let mut a = [0u8; 32];
+            if i == PI_MIN_TIER {
+                a[0] = 0xff; // garbage in the high bytes of the u32 field
+            }
+            words.push_back(BytesN::from_array(&env, &a));
+        }
+        assert_eq!(
+            PublicInputs::decode(&env, &words).unwrap_err(),
             Error::BadPublicInputs
         );
     }

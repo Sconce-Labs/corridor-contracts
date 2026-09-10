@@ -18,14 +18,19 @@ big-endian word.
 | idx | const | field | encoding |
 |----:|-------|-------|----------|
 | 0 | `PI_CORRIDOR_ID` | `corridor_id` | 32-byte id |
-| 1 | `PI_MIN_TIER` | `min_tier` | `u32` in the low 4 bytes |
-| 2 | `PI_NOW` | `now` | `u64` in the low 8 bytes |
+| 1 | `PI_MIN_TIER` | `min_tier` | `u32`, big-endian in the low 4 bytes; **high 28 bytes must be zero** |
+| 2 | `PI_NOW` | `now` | `u64`, big-endian in the low 8 bytes; **high 24 bytes must be zero** |
 | 3 | `PI_NULLIFIER` | `nullifier` | 32-byte field element, `Poseidon2(holder_secret, corridor_id)` |
-| 4 | `PI_DISCLOSED_TAG` | `disclosed_tag` | `u32` in the low 4 bytes, `< 16` |
+| 4 | `PI_DISCLOSED_TAG` | `disclosed_tag` | `u32` in the low 4 bytes, `< 16`; **high 28 bytes must be zero**. A category label only — the circuit does **not** bind it to any attribute (audit R2-H1) |
 | 5 | `PI_ISSUER_ID` | `issuer_id` | 32-byte id, `Poseidon2(issuer_pk.x, issuer_pk.y)` |
-| 6 | `PI_MIN_CRED_EPOCH` | `min_cred_epoch` | `u64` in the low 8 bytes — the bulk-revocation floor |
-| 7 | `PI_AUDITOR_PUBKEY` | `auditor_pubkey` | 32-byte key — must equal `policy.auditor_pubkey` (`0` = no auditor) |
+| 6 | `PI_MIN_CRED_EPOCH` | `min_cred_epoch` | `u64` in the low 8 bytes — the bulk-revocation floor; **high 24 bytes must be zero** |
+| 7 | `PI_AUDITOR_PUBKEY` | `auditor_pubkey` | 32-byte key `< BN254_P` (it's a circuit `Field`) — must equal `policy.auditor_pubkey` (`0` = no auditor) |
 | 8 | `PI_AUDITOR_BLOB` | `auditor_blob` | `Poseidon2(auditor_pubkey, tier, issuer_id, nullifier, auditor_nonce)` |
+
+`PublicInputs::decode` returns `BadPublicInputs` on a length mismatch **or** a
+non-canonical numeric word (non-zero high bytes on `min_tier` / `now` /
+`disclosed_tag` / `min_cred_epoch`). The circuit already range-constrains these
+as `u32` / `u64`, so this is defence in depth.
 
 ### What the circuit proves (private witness, not public)
 
@@ -56,22 +61,27 @@ Bound against the corridor's on-chain `CorridorPolicy`:
 `Poseidon2` must produce identical output across the Noir circuit, the SDK's
 witness builder, and any on-chain hashing on Stellar — otherwise the issuer_id,
 nullifier and auditor_blob computed in the circuit and re-derived elsewhere stop
-agreeing.
+agreeing. The circuit uses **arity 2** (`holder_binding`, `issuer_id`,
+`nullifier`), **arity 4** (the signed statement message) and **arity 5**
+(`auditor_blob`); all three are pinned explicitly in
+`corridor-circuits/src/conformance.nr`, `corridor-sdk/src/poseidon.test.ts`, and
+`corridor-contracts/crates/poseidon_conformance`.
 
 **Pinned vectors** (t=4 / rate-3 sponge, BN254):
 
-| input | output (32-byte canonical) |
-|-------|---------------------------|
-| `[1]` | `0x168758332d5b3e2d13be8048c8011b454590e06c44bce7f702f09103eef5a373` |
-| `[1,2]` | `0x038682aa1cb5ae4e0a3f13da432a95c77c5c111f6f030faf9cad641ce1ed7383` |
-| `[1,2,3]` | `0x23864adb160dddf590f1d3303683ebcb914f828e2635f6e85a32f0a1aecd3dd8` |
-| `[1,2,3,4,5]` | `0x2247be7014a54d17342a7ef677f58d28877780d203860396967f5d0a18d259db` |
+| input | output (32-byte canonical) | used for |
+|-------|---------------------------|----------|
+| `[1]` | `0x168758332d5b3e2d13be8048c8011b454590e06c44bce7f702f09103eef5a373` | — |
+| `[1,2]` | `0x038682aa1cb5ae4e0a3f13da432a95c77c5c111f6f030faf9cad641ce1ed7383` | holder_binding, issuer_id, nullifier |
+| `[1,2,3]` | `0x23864adb160dddf590f1d3303683ebcb914f828e2635f6e85a32f0a1aecd3dd8` | — |
+| `[1,2,3,4]` | `0x130bf204a32cac1f0ace56c78b731aa3809f06df2731ebcf6b3464a15788b1b9` | **statement message** |
+| `[1,2,3,4,5]` | `0x2247be7014a54d17342a7ef677f58d28877780d203860396967f5d0a18d259db` | **auditor_blob** |
 
 | Implementation | Source | Status |
 |----------------|--------|--------|
-| Noir circuit | `noir-lang/poseidon` v0.3.0 | ✅ `[1,2]` asserted in `corridor-circuits/src/conformance.nr` |
-| SDK witness builder | `@zkpassport/poseidon2` | ✅ `[1,2]` asserted in `corridor-sdk/src/poseidon.test.ts` |
-| Soroban | `stellar/rs-soroban-poseidon` | ✅ all four asserted in `crates/poseidon_conformance` |
+| Noir circuit | `noir-lang/poseidon` v0.3.0 | ✅ `[1,2]`, `[1,2,3,4]`, `[1,2,3,4,5]` asserted in `corridor-circuits/src/conformance.nr` |
+| SDK witness builder | `@zkpassport/poseidon2` | ✅ all five asserted in `corridor-sdk/src/poseidon.test.ts` |
+| Soroban | `stellar/rs-soroban-poseidon` | ✅ all five asserted in `crates/poseidon_conformance` |
 
 Under Option B, `corridor.compact` does no hash-critical work (it stores a plain
 issuer directory), so Midnight is not on this list and does not need to be.

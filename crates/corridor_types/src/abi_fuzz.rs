@@ -34,10 +34,10 @@ fn u64_word_round_trips_over_many_values() {
     let mut rng = Rng(0x9E3779B97F4A7C15);
     for _ in 0..2_000 {
         let v = rng.next();
-        assert_eq!(word_to_u64(&u64_to_word(&env, v)), v);
+        assert_eq!(word_to_u64(&u64_to_word(&env, v)).unwrap(), v);
     }
     for v in [0u64, 1, u64::MAX] {
-        assert_eq!(word_to_u64(&u64_to_word(&env, v)), v);
+        assert_eq!(word_to_u64(&u64_to_word(&env, v)).unwrap(), v);
     }
 }
 
@@ -47,7 +47,24 @@ fn u32_word_round_trips_over_many_values() {
     let mut rng = Rng(0xDEADBEEF12345678);
     for _ in 0..2_000 {
         let v = rng.next() as u32;
-        assert_eq!(word_to_u32(&u32_to_word(&env, v)), v);
+        assert_eq!(word_to_u32(&u32_to_word(&env, v)).unwrap(), v);
+    }
+}
+
+#[test]
+fn word_decoders_reject_random_non_canonical_words() {
+    let env = Env::default();
+    let mut rng = Rng(0xA5A5_5A5A_A5A5_5A5A);
+    for _ in 0..1_000 {
+        let mut a = [0u8; 32];
+        // fill the whole word with noise, then guarantee a non-zero high byte
+        for byte in a.iter_mut() {
+            *byte = rng.next() as u8;
+        }
+        a[0] |= 1;
+        let w = BytesN::from_array(&env, &a);
+        assert_eq!(word_to_u64(&w).unwrap_err(), Error::BadPublicInputs);
+        assert_eq!(word_to_u32(&w).unwrap_err(), Error::BadPublicInputs);
     }
 }
 
