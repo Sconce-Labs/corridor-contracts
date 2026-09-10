@@ -35,6 +35,7 @@ enum DataKey {
 ///     pass stays alive indefinitely,
 ///   * operators needing multi-year assurance with no on-chain reads should
 ///     mirror `is_cleared` results into their own contract.
+///
 /// A future milestone moves spent nullifiers into a cheap-to-persist
 /// accumulator (see corridor-contracts#5).
 const PASS_TTL_LEDGERS: u32 = 6_312_000; // ~2 years at 10s ledgers; clamped to network max
@@ -91,11 +92,7 @@ impl CorridorAttestation {
             return Err(Error::DisclosureMissing);
         }
         let ts = env.ledger().timestamp();
-        let skew = if ts > pi.now {
-            ts - pi.now
-        } else {
-            pi.now - ts
-        };
+        let skew = ts.abs_diff(pi.now);
         if skew > policy.now_tolerance_secs {
             return Err(Error::StaleProofTime);
         }
