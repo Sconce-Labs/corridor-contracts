@@ -107,3 +107,35 @@ fn pause_toggles() {
     registry.set_paused(&cid, &false);
     assert!(!registry.get_policy(&cid).paused);
 }
+
+#[test]
+fn transfer_admin_moves_the_role() {
+    let (env, registry, admin) = setup();
+    assert_eq!(registry.admin(), admin);
+    let new_admin = Address::generate(&env);
+    registry.transfer_admin(&new_admin);
+    assert_eq!(registry.admin(), new_admin);
+}
+
+#[test]
+fn update_policy_keeps_the_operator_and_roots() {
+    let (env, registry, _admin) = setup();
+    let operator = Address::generate(&env);
+    let verifier = Address::generate(&env);
+    let relayer = Address::generate(&env);
+    let cid = BytesN::from_array(&env, &[1u8; 32]);
+    registry.register(&cid, &sample_policy(&env, &operator, &verifier));
+    let root = BytesN::from_array(&env, &[42u8; 32]);
+    registry.post_root(&relayer, &cid, &root, &zero32(&env), &3);
+
+    // try to change everything, including the operator and roots
+    let mut evil = sample_policy(&env, &Address::generate(&env), &verifier);
+    evil.min_tier = 4;
+    registry.update_policy(&cid, &evil);
+
+    let got = registry.get_policy(&cid);
+    assert_eq!(got.min_tier, 4); // operator-controlled field changed
+    assert_eq!(got.operator, operator); // operator preserved
+    assert_eq!(got.credential_root, root); // root preserved
+    assert_eq!(got.root_epoch, 3); // epoch preserved
+}
