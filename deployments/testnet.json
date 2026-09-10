@@ -7,18 +7,13 @@
   "deployer": "GATI44YBCQ67LZOKSE4R7C7QOKJU7F4DQBMSR4CBGC5YZ7TQRYWCJR2O",
   "contracts": {
     "verifier_mock": "CBN7N7AT7CPAA7MBIAULEBY3GIV7NNB3XPNEUJSIAHFIM5BJ7GIGK46Y",
-    "corridor_registry": "CAV6DMVCBOU5DGQVFSPU2UIF62LNFW7PWAGC7HCPHVIUO6SWRPSX3B65",
-    "corridor_attestation": "CD76SRVQS6QSDFL2DYWGPK2JGWQPZO4NBFOGRDR5UWLGCABLBONNUXK5"
-  },
-  "deployTx": {
-    "verifier_mock": "8e76dd9d33bd7a523567a9a6eece253e7293b352a0bcaab66d653978e0fd7b3c",
-    "corridor_registry": "c61f8104491dec5c287a7f729868b7139fd0ab84308e1b4f6b448051818b618f",
-    "corridor_attestation": "2588b24a77eed215a1cd67ebbd3ada02e26792d66e1aca5fc1a0f7fcd4476498"
+    "corridor_registry": "CDGMQ24E6OIBZB3EKJN5TUA5POYE6D5FNBL2II6SRLTYF32TE4HIEXJ6",
+    "corridor_attestation": "CCHWKVRCEKPJHEXREP5SCZ4TEKNBFYEFYA2VR3SET5AMG4WOC76LDL4K"
   },
   "smokeTest": {
     "corridor_id": "0x0000000000000000000000000000000000000000000000000000000000000004",
-    "register_tx": "1a41964c6d0398ea73f38e31a905f8d0bacdea834b0d95c480701b2e11dc9fac",
-    "enter_tx": "451fa970600851e822363f32ef7eca4be67f9b8f7cd6966082e326230f0620a0",
+    "register_tx": "92edcb7c7eef5c34fee657b5a21054d51d2c30aff4781606ac59912d55adbfa4",
+    "enter_tx": "861a17e67a91c5f49c34ae1e0e75b8f5fccc76e542b42979dc8881b808b5dfaf",
     "publicInputs": [
       "corridor_id",
       "min_tier",
@@ -32,5 +27,5 @@
     ],
     "result": "register -> enter (PassGranted, tag 1, passes 1) -> is_cleared == true; replay rejected with Error #12 (NullifierUsed)"
   },
-  "notes": "Option B ABI (9 public inputs, issuer-signed statements; no post_root). verifier_mock is a placeholder that returns true — see ROADMAP.md M3 for the real UltraHonk verifier."
+  "notes": "Option B ABI (9 public inputs, issuer-signed statements; no post_root). Redeployed with the audit R2-M7 non-canonical-word rejection. verifier_mock (CBN7N7AT…) is unchanged and reused; it is a placeholder that returns true — see ROADMAP.md M3 for the real UltraHonk verifier."
 }
