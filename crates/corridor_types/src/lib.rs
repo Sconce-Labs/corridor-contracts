@@ -11,6 +11,8 @@
 //! SDK, and `ABI.md` in the same coordinated PR.
 
 mod abi;
+#[cfg(test)]
+mod abi_fuzz;
 mod errors;
 mod interfaces;
 mod policy;
