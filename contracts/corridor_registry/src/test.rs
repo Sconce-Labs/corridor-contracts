@@ -20,6 +20,7 @@ fn sample_policy(env: &Env, operator: &Address, verifier: &Address) -> CorridorP
         root_epoch: 0,
         verifier: verifier.clone(),
         vk_hash: BytesN::from_array(env, &[9u8; 32]),
+        auditor_pubkey: BytesN::from_array(env, &[0u8; 32]),
         now_tolerance_secs: 300,
         paused: false,
     }

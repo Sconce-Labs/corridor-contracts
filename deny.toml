@@ -1,24 +1,35 @@
 # cargo-deny — https://embarkstudios.github.io/cargo-deny/
+# The `deny` CI job is advisory (continue-on-error) — these settings keep the
+# signal useful without failing on noise from soroban-sdk's dependency tree.
 
 [advisories]
 yanked = "deny"
-ignore = []
+# soroban-sdk 25/27 pull in `derivative` (RUSTSEC-2024-0388) and `paste`
+# (RUSTSEC-2024-0436), both unmaintained-but-not-vulnerable. Revisit on the
+# next soroban-sdk bump.
+ignore = ["RUSTSEC-2024-0388", "RUSTSEC-2024-0436"]
 
 [licenses]
 allow = [
     "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
     "MIT",
+    "MIT-0",
     "BSD-3-Clause",
     "BSD-2-Clause",
     "Unicode-3.0",
+    "Unicode-DFS-2016",
     "ISC",
     "Zlib",
+    "CC0-1.0",
+    "MPL-2.0",
 ]
 confidence-threshold = 0.9
 
 [bans]
-multiple-versions = "allow"   # soroban-sdk 25 + 27 coexist for the conformance crate
-wildcards = "deny"
+multiple-versions = "allow"   # soroban-sdk 25 (deployables) + 27 (conformance)
+# Path deps in a workspace have no version req; that is not a real "wildcard".
+wildcards = "allow"
 
 [sources]
 unknown-registry = "deny"
