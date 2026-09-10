@@ -58,11 +58,24 @@ Deploy your own: `scripts/deploy_testnet.sh`, then `scripts/demo.sh`.
 
 That's the whole integration surface.
 
+## Events
+
+| Contract | Event | Topics | Data |
+|----------|-------|--------|------|
+| registry | `Registered` | `corridor_id`, `operator` | `min_tier` |
+| registry | `PolicyUpdated` | `corridor_id` | `min_tier`, `paused` |
+| registry | `PausedSet` | `corridor_id` | `paused` |
+| registry | `RootPosted` | `corridor_id`, `relayer` | `epoch`, `credential_root`, `revocation_root` |
+| attestation | `PassGranted` | `corridor_id`, `nullifier` | `tag`, `passes` |
+
+Defined with `#[contractevent]` in each contract's `events.rs`.
+
 ## State-rent note
 
 `corridor_attestation` stores one persistent entry per granted pass, TTL-extended
 to ~30 days. High-volume corridors accrue rent; an archival path is on the
-roadmap. Nullifiers must not silently expire while a credential is still valid.
+roadmap ([#5](https://github.com/Sconce-Labs/corridor-contracts/issues/5)).
+Nullifiers must not silently expire while a credential is still valid.
 
 ## Contributing
 
