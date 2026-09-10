@@ -4,6 +4,10 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+    ignore:
+      # soroban-sdk is pinned to the deployed protocol version — bump deliberately
+      - dependency-name: "soroban-sdk"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
