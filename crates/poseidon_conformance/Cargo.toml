@@ -14,7 +14,8 @@ doctest = false
 # the stellar/rs-soroban-poseidon helper. Nothing here is deployed.
 [dependencies]
 soroban-sdk = "27"
-soroban-poseidon = { git = "https://github.com/stellar/rs-soroban-poseidon" }
+# Pinned — an unpinned git dep would let CI break on any upstream commit (audit M1).
+soroban-poseidon = { git = "https://github.com/stellar/rs-soroban-poseidon", rev = "177970c51b83aede0a80ce0cb862382dddeddaa9" }
 
 [dev-dependencies]
 soroban-sdk = { version = "27", features = ["testutils"] }
