@@ -24,10 +24,21 @@ enum DataKey {
     Passes(BytesN<32>),
 }
 
-/// A granted pass is kept for at least this many ledgers before it can expire
-/// from persistent storage (~30 days at 5s ledgers). Operators that need
-/// longer-lived assurance should re-check against a fresh root epoch.
-const PASS_TTL_LEDGERS: u32 = 518_400;
+/// A Corridor pass is **one-time per credential per corridor, permanently** —
+/// the `(corridor_id, nullifier)` entry must never disappear, or the same
+/// credential could `enter()` again. Soroban persistent entries cannot be made
+/// truly immortal (they are bounded by the network `max_entry_ttl`, ~1 year on
+/// mainnet), so:
+///   * every write bumps the TTL to this target (the SDK clamps to the network
+///     max),
+///   * `is_cleared` / `pass_record` reads also bump it, so an actively-monitored
+///     pass stays alive indefinitely,
+///   * operators needing multi-year assurance with no on-chain reads should
+///     mirror `is_cleared` results into their own contract.
+/// A future milestone moves spent nullifiers into a cheap-to-persist
+/// accumulator (see corridor-contracts#5).
+const PASS_TTL_LEDGERS: u32 = 6_312_000; // ~2 years at 10s ledgers; clamped to network max
+const PASS_TTL_THRESHOLD: u32 = 3_000_000;
 
 #[contract]
 pub struct CorridorAttestation;
@@ -111,12 +122,15 @@ impl CorridorAttestation {
         env.storage().persistent().set(&nk, &record);
         env.storage()
             .persistent()
-            .extend_ttl(&nk, PASS_TTL_LEDGERS, PASS_TTL_LEDGERS);
+            .extend_ttl(&nk, PASS_TTL_THRESHOLD, PASS_TTL_LEDGERS);
 
         // 4. bump the aggregate counter
         let pk = DataKey::Passes(corridor_id.clone());
         let passes: u64 = env.storage().persistent().get(&pk).unwrap_or(0);
         env.storage().persistent().set(&pk, &(passes + 1));
+        env.storage()
+            .persistent()
+            .extend_ttl(&pk, PASS_TTL_THRESHOLD, PASS_TTL_LEDGERS);
 
         PassGranted {
             corridor_id,
@@ -129,11 +143,18 @@ impl CorridorAttestation {
     }
 
     /// Cheap read for a corridor operator's payout contract: has this nullifier
-    /// been granted a pass on this corridor?
+    /// been granted a pass on this corridor? Bumps the entry's TTL so an
+    /// actively-monitored pass never expires.
     pub fn is_cleared(env: Env, corridor_id: BytesN<32>, nullifier: BytesN<32>) -> bool {
-        env.storage()
-            .persistent()
-            .has(&DataKey::Nullifier(corridor_id, nullifier))
+        let nk = DataKey::Nullifier(corridor_id, nullifier);
+        if env.storage().persistent().has(&nk) {
+            env.storage()
+                .persistent()
+                .extend_ttl(&nk, PASS_TTL_THRESHOLD, PASS_TTL_LEDGERS);
+            true
+        } else {
+            false
+        }
     }
 
     pub fn pass_record(
@@ -141,9 +162,14 @@ impl CorridorAttestation {
         corridor_id: BytesN<32>,
         nullifier: BytesN<32>,
     ) -> Option<PassRecord> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::Nullifier(corridor_id, nullifier))
+        let nk = DataKey::Nullifier(corridor_id, nullifier);
+        let rec: Option<PassRecord> = env.storage().persistent().get(&nk);
+        if rec.is_some() {
+            env.storage()
+                .persistent()
+                .extend_ttl(&nk, PASS_TTL_THRESHOLD, PASS_TTL_LEDGERS);
+        }
+        rec
     }
 
     pub fn passes(env: Env, corridor_id: BytesN<32>) -> u64 {
