@@ -41,3 +41,6 @@ impl VerifierMock {
             .unwrap_or(true)
     }
 }
+
+#[cfg(test)]
+mod test;
