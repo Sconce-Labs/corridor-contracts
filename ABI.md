@@ -7,7 +7,7 @@ emit them in exactly this order; the SDK
 ([`corridor-sdk`](https://github.com/Sconce-Labs/corridor-sdk)) must assemble
 them the same way. A change here is a coordinated change across all three repos.
 
-Canonical definition: `crates/corridor_types/src/lib.rs` (`PI_*` constants and
+Canonical definition: `crates/corridor_types/src/abi.rs` (`PI_*` constants and
 `PublicInputs::decode`).
 
 ## Layout
@@ -46,13 +46,20 @@ witness builder, and any on-chain hashing on Stellar — otherwise the Merkle
 roots computed on Midnight, in the circuit, and checked on Stellar stop
 agreeing.
 
-**Pinned vector:** `poseidon2([1, 2]) == 0x038682aa1cb5ae4e0a3f13da432a95c77c5c111f6f030faf9cad641ce1ed7383`
+**Pinned vectors** (t=4 / rate-3 sponge, BN254):
+
+| input | output (32-byte canonical) |
+|-------|---------------------------|
+| `[1]` | `0x168758332d5b3e2d13be8048c8011b454590e06c44bce7f702f09103eef5a373` |
+| `[1,2]` | `0x038682aa1cb5ae4e0a3f13da432a95c77c5c111f6f030faf9cad641ce1ed7383` |
+| `[1,2,3]` | `0x23864adb160dddf590f1d3303683ebcb914f828e2635f6e85a32f0a1aecd3dd8` |
+| `[1,2,3,4,5]` | `0x2247be7014a54d17342a7ef677f58d28877780d203860396967f5d0a18d259db` |
 
 | Implementation | Source | Status |
 |----------------|--------|--------|
-| Noir circuit | `noir-lang/poseidon` v0.3.0 | ✅ asserted in `corridor-circuits` |
-| SDK witness builder | `@zkpassport/poseidon2` | ✅ asserted in `corridor-sdk` — matches |
-| Soroban | `stellar/rs-soroban-poseidon` (`poseidon2_hash`, "matches noir's implementation") | ✅ asserted in `crates/poseidon_conformance` |
+| Noir circuit | `noir-lang/poseidon` v0.3.0 | ✅ `[1,2]` asserted in `corridor-circuits/src/conformance.nr` |
+| SDK witness builder | `@zkpassport/poseidon2` | ✅ `[1,2]` asserted in `corridor-sdk/src/poseidon.test.ts` |
+| Soroban | `stellar/rs-soroban-poseidon` | ✅ all four asserted in `crates/poseidon_conformance` |
 
 The Midnight side (`persistentHash` / `MerkleTree` hashing in `corridor.compact`)
 is **not yet** on this list — M4 must confirm the Compact tree hash matches the
