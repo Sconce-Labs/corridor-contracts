@@ -7,12 +7,13 @@
 //! the same corridor, and records a [`PassRecord`]. Corridor operators gate
 //! payouts by calling `is_cleared`.
 
+mod events;
+use events::PassGranted;
+
 use corridor_types::{
     CorridorPolicy, Error, PassRecord, PublicInputs, RegistryClient, VerifierClient,
 };
-use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, Address, Bytes, BytesN, Env, Vec,
-};
+use soroban_sdk::{contract, contractimpl, contracttype, Address, Bytes, BytesN, Env, Vec};
 
 #[contracttype]
 enum DataKey {
@@ -117,10 +118,13 @@ impl CorridorAttestation {
         let passes: u64 = env.storage().persistent().get(&pk).unwrap_or(0);
         env.storage().persistent().set(&pk, &(passes + 1));
 
-        env.events().publish(
-            (symbol_short!("PASS"), corridor_id, pi.nullifier),
-            (pi.disclosed_tag, passes + 1),
-        );
+        PassGranted {
+            corridor_id,
+            nullifier: pi.nullifier,
+            tag: pi.disclosed_tag,
+            passes: passes + 1,
+        }
+        .publish(&env);
         Ok(())
     }
 

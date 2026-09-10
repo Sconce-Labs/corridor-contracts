@@ -113,6 +113,21 @@ fn happy_path_grants_a_pass() {
 }
 
 #[test]
+fn a_second_pass_on_the_same_corridor_bumps_the_counter() {
+    let w = setup();
+    let env = &w.env;
+    let proof = Bytes::from_array(env, &[0xaa; 8]);
+    w.attestation.enter(&w.cid, &proof, &good_inputs(env));
+
+    // a different holder → different nullifier
+    let mut v2 = good_inputs(env);
+    v2.set(5, b32(env, [0x77; 32]));
+    w.attestation.enter(&w.cid, &proof, &v2);
+
+    assert_eq!(w.attestation.passes(&w.cid), 2);
+}
+
+#[test]
 fn nullifier_cannot_be_reused() {
     let w = setup();
     let proof = Bytes::from_array(&w.env, &[0xaa; 8]);
