@@ -33,6 +33,7 @@ soroban-sdk's dependency tree.
 |-------|------|
 | `crates/corridor_types` | `errors` / `policy` / `abi` / `interfaces` modules |
 | `crates/poseidon_conformance` | test-only Poseidon2 cross-impl check |
-| `contracts/corridor_registry` | policy CRUD + `post_root` |
+| `contracts/corridor_registry` | policy CRUD + `set_min_cred_epoch` + two-step admin |
 | `contracts/corridor_attestation` | `enter` / `is_cleared` / nullifier ledger |
+| `contracts/ultrahonk_verifier` | real UltraHonk verifier skeleton (M3) |
 | `contracts/verifier_mock` | configurable verifier (tests + staging) |
