@@ -60,6 +60,7 @@ fn setup() -> World {
         paused: false,
     };
     registry.register(&cid, &policy);
+    registry.set_relayer(&relayer, &true);
     registry.post_root(
         &relayer,
         &cid,
