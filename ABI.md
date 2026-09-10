@@ -41,7 +41,20 @@ Bound against the corridor's on-chain `CorridorPolicy`:
 
 ## Hash conformance
 
-`Poseidon2` must be parameter-identical across Midnight (`persistentHash` / tree
-hashing), the Noir circuit, and Soroban's `poseidon2_permutation` host function.
-See the conformance test tracked in the roadmap — this is a correctness gate,
-not a nicety.
+`Poseidon2` must produce identical output across the Noir circuit, the SDK's
+witness builder, and any on-chain hashing on Stellar — otherwise the Merkle
+roots computed on Midnight, in the circuit, and checked on Stellar stop
+agreeing.
+
+**Pinned vector:** `poseidon2([1, 2]) == 0x038682aa1cb5ae4e0a3f13da432a95c77c5c111f6f030faf9cad641ce1ed7383`
+
+| Implementation | Source | Status |
+|----------------|--------|--------|
+| Noir circuit | `noir-lang/poseidon` v0.3.0 | ✅ asserted in `corridor-circuits` |
+| SDK witness builder | `@zkpassport/poseidon2` | ✅ asserted in `corridor-sdk` — matches |
+| Soroban | `stellar/rs-soroban-poseidon` (`poseidon2_hash`, "matches noir's implementation") | ✅ asserted in `crates/poseidon_conformance` |
+
+The Midnight side (`persistentHash` / `MerkleTree` hashing in `corridor.compact`)
+is **not yet** on this list — M4 must confirm the Compact tree hash matches the
+same vector before credentials issued on Midnight can be proven against on
+Stellar.

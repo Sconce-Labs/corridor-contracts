@@ -22,7 +22,9 @@ jobs:
       - name: Unit tests (host)
         run: cargo test --workspace --locked
       - name: Contract wasm build
-        run: cargo build --workspace --locked --release --target wasm32v1-none
+        run: >
+          cargo build --locked --release --target wasm32v1-none
+          -p corridor-registry -p corridor-attestation -p verifier-mock
       - uses: actions/upload-artifact@v4
         with:
           name: wasm

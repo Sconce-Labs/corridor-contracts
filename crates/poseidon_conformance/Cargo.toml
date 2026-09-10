@@ -1,0 +1,20 @@
+[package]
+name = "poseidon-conformance"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "Asserts Soroban's Poseidon2 matches the Noir circuit + the SDK (the M2 hash-conformance gate)"
+
+[lib]
+crate-type = ["rlib"]
+doctest = false
+
+# Isolated from the contract crates: uses a newer soroban-sdk purely to reach
+# the stellar/rs-soroban-poseidon helper. Nothing here is deployed.
+[dependencies]
+soroban-sdk = "27"
+soroban-poseidon = { git = "https://github.com/stellar/rs-soroban-poseidon" }
+
+[dev-dependencies]
+soroban-sdk = { version = "27", features = ["testutils"] }

@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "crates/corridor_types",
+    "crates/poseidon_conformance",
     "contracts/corridor_registry",
     "contracts/corridor_attestation",
     "contracts/verifier_mock",

@@ -16,6 +16,7 @@ ZK proof verification, the nullifier ledger, and payout gating.
 | Crate | Kind | Role |
 |-------|------|------|
 | `crates/corridor_types` | rlib | Shared types, errors, the `PI_*` public-input ABI, `Verifier` / `Registry` cross-contract interfaces |
+| `crates/poseidon_conformance` | test-only | Asserts Soroban's Poseidon2 matches the circuit + SDK vector ([`ABI.md`](./ABI.md) "Hash conformance") |
 | `contracts/corridor_registry` | contract | Per-corridor `CorridorPolicy`; a relayer posts Midnight-synced roots via `post_root` |
 | `contracts/corridor_attestation` | contract | `enter(corridor_id, proof, public_inputs)` → bind to policy → verify → burn nullifier → record `PassRecord`. `is_cleared()` for payout gating |
 | `contracts/verifier_mock` | contract | Configurable pass/fail verifier for tests and staged rollout. **Not for production** — the real UltraHonk verifier replaces it. |
@@ -23,8 +24,9 @@ ZK proof verification, the nullifier ledger, and payout gating.
 ## Build & test
 
 ```bash
-cargo test --workspace          # 14 host tests, no network
-cargo build --release --target wasm32v1-none
+cargo test --workspace          # host tests, no network
+cargo build --release --target wasm32v1-none \
+  -p corridor-registry -p corridor-attestation -p verifier-mock
 ```
 
 Requires the `wasm32v1-none` target (`rustup target add wasm32v1-none`) and the
