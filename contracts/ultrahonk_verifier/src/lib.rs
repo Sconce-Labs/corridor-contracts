@@ -1,17 +1,31 @@
 #![no_std]
-//! UltraHonk proof verifier for Corridor — **skeleton (M3)**.
+//! UltraHonk proof verifier for Corridor.
 //!
-//! Implements the same `verify(vk_hash, proof, public_inputs) -> bool` shape as
-//! `verifier_mock`, so a corridor's policy can point at this address instead
-//! with no change to `corridor_attestation`.
+//! Implements the `verify(vk_hash, proof, public_inputs) -> bool` interface
+//! from `corridor_types::Verifier`, so a corridor's policy can point at this
+//! address instead of `verifier_mock` with no change to `corridor_attestation`.
 //!
-//! The real verification is `bb`'s UltraHonk verifier ported to Soroban
-//! (reference: `indextree/ultrahonk_soroban_contract`), using the Protocol 25
-//! BN254 pairing + Poseidon2 host functions. This crate currently:
-//!   * stores the verification key at deploy time
-//!   * checks `vk_hash` matches the stored VK
-//!   * returns `false` (nothing verifies yet) — tracked in
-//!     https://github.com/Sconce-Labs/corridor-contracts/issues/1
+//! Adapts `indextree/ultrahonk_soroban_contract` and the Barretenberg UltraHonk
+//! verifier ported to Soroban, using the Protocol 25 BN254 pairing host functions.
+
+extern crate alloc;
+
+pub mod debug;
+pub mod ec;
+pub mod field;
+pub mod hash;
+pub mod relations;
+pub mod shplemini;
+pub mod sumcheck;
+pub mod transcript;
+pub mod types;
+pub mod utils;
+pub mod verifier;
+
+pub const PROOF_FIELDS: usize = 456;
+pub const PROOF_BYTES: usize = PROOF_FIELDS * 32;
+
+pub use verifier::UltraHonkVerifier;
 
 use soroban_sdk::{contract, contractimpl, contracttype, Bytes, BytesN, Env, Vec};
 
@@ -38,44 +52,46 @@ impl UltrahonkVerifier {
         env.storage().instance().get(&DataKey::VkHash).unwrap()
     }
 
-    /// M3: run the UltraHonk verifier. For now this only enforces the VK pin
-    /// and returns `false`.
+    /// Run the UltraHonk verifier.
     pub fn verify(
         env: Env,
         vk_hash: BytesN<32>,
-        _proof: Bytes,
-        _public_inputs: Vec<BytesN<32>>,
+        proof: Bytes,
+        public_inputs: Vec<BytesN<32>>,
     ) -> bool {
-        let stored: BytesN<32> = env.storage().instance().get(&DataKey::VkHash).unwrap();
+        let stored: BytesN<32> = match env.storage().instance().get(&DataKey::VkHash) {
+            Some(h) => h,
+            None => return false,
+        };
         if vk_hash != stored {
             return false;
         }
-        // TODO(M3): transcript, sumcheck, PCS opening, pairing check.
-        false
+
+        if proof.len() as usize != PROOF_BYTES {
+            return false;
+        }
+
+        let vk_bytes: Bytes = match env.storage().instance().get(&DataKey::Vk) {
+            Some(vk) => vk,
+            None => return false,
+        };
+
+        let verifier = match UltraHonkVerifier::new(&env, &vk_bytes) {
+            Ok(v) => v,
+            Err(_) => return false,
+        };
+
+        let mut pi_bytes = Bytes::new(&env);
+        for pi in public_inputs.iter() {
+            pi_bytes.append(&pi.into());
+        }
+
+        match verifier.verify(&proof, &pi_bytes) {
+            Ok(()) => true,
+            Err(_) => false,
+        }
     }
 }
 
 #[cfg(test)]
-mod test {
-    extern crate std;
-    use super::*;
-    use soroban_sdk::{vec, Bytes, BytesN, Env};
-
-    #[test]
-    fn pins_the_vk_and_rejects_a_mismatched_hash() {
-        let env = Env::default();
-        let vk = Bytes::from_array(&env, &[1u8; 64]);
-        let id = env.register(UltrahonkVerifier, (vk.clone(),));
-        let client = UltrahonkVerifierClient::new(&env, &id);
-
-        let good = client.vk_hash();
-        let bad = BytesN::from_array(&env, &[0u8; 32]);
-        let proof = Bytes::from_array(&env, &[0u8; 8]);
-        let pi = vec![&env, BytesN::from_array(&env, &[0u8; 32])];
-
-        // wrong vk_hash → false regardless
-        assert!(!client.verify(&bad, &proof, &pi));
-        // right vk_hash → still false until M3 lands the real verifier
-        assert!(!client.verify(&good, &proof, &pi));
-    }
-}
+mod test;

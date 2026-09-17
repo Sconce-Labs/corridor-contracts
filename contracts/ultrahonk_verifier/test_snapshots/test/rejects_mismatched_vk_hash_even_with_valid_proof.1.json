@@ -1,0 +1,86 @@
+{
+  "generators": {
+    "address": 1,
+    "nonce": 0,
+    "mux_id": 0
+  },
+  "auth": [
+    [],
+    []
+  ],
+  "ledger": {
+    "protocol_version": 25,
+    "sequence_number": 0,
+    "timestamp": 0,
+    "network_id": "0000000000000000000000000000000000000000000000000000000000000000",
+    "base_reserve": 0,
+    "min_persistent_entry_ttl": 4096,
+    "min_temp_entry_ttl": 16,
+    "max_entry_ttl": 6312000,
+    "ledger_entries": [
+      {
+        "entry": {
+          "last_modified_ledger_seq": 0,
+          "data": {
+            "contract_data": {
+              "ext": "v0",
+              "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+              "key": "ledger_key_contract_instance",
+              "durability": "persistent",
+              "val": {
+                "contract_instance": {
+                  "executable": {
+                    "wasm": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                  },
+                  "storage": [
+                    {
+                      "key": {
+                        "vec": [
+                          {
+                            "symbol": "Vk"
+                          }
+                        ]
+                      },
+                      "val": {
+                        "bytes": "0000000000001000000000000000000c000000000000001500000000000000012965dc9cb17d9c0bfab729db52fda291a8e610b9f6951bf25e591d3d486ff950095646ea983f74c1b2d4b0d1f0092d4d34de32fde1c0c90b975ea36244d5d63e00d4189f86be6f5f2509505510dc39d155b698600f30687f40a228bf380052b509c05ffb2ea2169ab24e7a85d512feeae0c5dc5299459250eded33c0f09302250c613377bb1f1f008efa85ebdd3f72071414829e5b79219f3fe477f5989cb50726066415235961cbd30b806d44f384af0c2a5e4bf5eefffecac43580af50d0f9108e1ca97892b982cc84c3b4150fa068ff97960b5da29c5dc9230adf3e78d3742e1387396b3d1abeee9328d89bca3915e4466977ba6bdea5087d9cd45d0f67981f7ad86ed71ae141f2f2834c78b5c303303c72ed76aad28996ef06f64a2de5540f313342a941108b196d9e4cd02b25e59d2a5bf44b7667f9f9b1b11ff9eb8acd206748f7c90d634e98a5768e4eb9796b485b55b879b19bfa88c2b6408165ea6603bc4556004ebf44e2cf0a92aab61a3ad86ecd69d0599783cc053b90e001e12f17901a5df32166594b3e7945c24ae9b96c09c27ca328c08dd3e4d940d8184e581a0871ddfc99e108eb0e1735956790da52e2b7832015c0a07d894e236776480314919bbc62b5e8162e762458ff6920640a6192f5c0bd96a2a843d7ce57b903a8085ec47e5f42803cf2bbbc6c913b3cf1d4418294f512ec212bcca34251fe75040b15131558e884f0dff054de272c22ffb7931be4bade032d88ba5f0845e0de380a6a8bf97d0a3436aadb94bc94819f87615537edd0a7e47b6ef95899dbe3cd0103d0e87f9b930989f0edc27e0ca55cb0b4313eac65cc1f5cb9c1c979b23348a011c72fe2a60c79b6018e6ec826b8c6f3c49fbf4622683476268b7f4ac28054e42e988813c24b4af59a2bd8feb7fbab91e5c007a5e59c874eeb6283de635032a9243a1c95d7559738106625ade84a987a9e90249e4dc2ffdf9998151c9fba81cf156a3c51153be4c1ddb7cd9933c474cc125158d68554bb6932dda857601b28f70f402f3e9b79b308e092e60205b1a46235aae6d3210eb6e771d39e06cc14d26e084264313e63c0282bbbfda95cc774de71bb4565444303110bcf9743515792030e66e870d17822a8ec7b1332c919ca348ddb6f2182a4d7f70ff78e32ff366d490cbba32fb09d0adb944d7889939618f48b561af4b8734571715d32bfa7143d581686ce3bd25c88d340d86e79f538bd25a35628fda7ff94d7f00dcb943e2384391b666bded151e575c8ebc03afda5e740ab72a60a3caac9a5516c42d7f6ede0af0adea3f9aed7d29bcbbd1a942aea0710056b112bd646bd2f825f6d574eba94fb2a37ad982e52916e021f3efaa186053bda02c8c2efd8ce75c89695b7c5dae950005c0fc79b49b048b1d08b9f5d64e1c562863a52cc1b7edd0f0404f9434a0a36229c77d3c8c8de0092f02cc816e0d86265c1c4cab7634f57cf528923cffa1d5a103cd9625d422e901418315632ced4a4e3a74a63fcc47fdb2095a00aad957b1c134c291fd0a24cf1493106c2109b12450b310b4091c77ec1aaae507fb6e4abaa06410bf320dcaa8ca81ce4dd3a834af419104d3434a82c478a2e3f59ad00999423fff125dfaa1d795c3bad1d575e4add2d7367fb04be792d794fd1d19a82306a0139b15dd7371d937e2850e0007aa1f7fe7039edca8155bf5653e01868d50dad2833968d0b3a7babe5df4b3f46c03817b22515ae1d64d633c56dbf94e67a28b5194f8b246f08c46eb0efa40fb55a2964d33d8d9a0f8e830290b20a582a5469a0060cf6224cbbda90117c75a809215779cddd50f9ed6189c57333304c3ab62b170b73fb14d44260398c00bdf7ee9702ca8a536559b15e2394e9c00121000c30cd10b46142e7f947b7a21fd32677fffb0b12a1013d0cc7fdc84baa557d5b1afa9911c4a4881584171cb0e76816f9c6da062528dc18828ae67ad8e8cfda5c2da406268512ad9304329ec436e6c09ba70903f1e3ae87df417a381658bcb601feabc9299218495f42c0ec475069b877610fce3a681f73e68277ffe55186950f8cd19a20881f3a517026eb9f9950d48638cc575ddd16330fba02bafe5475a8e24825fc20a51001b706a493cf9aa7824360918fb71fe8ae6a52c43e49ab977e0c89cc010fab145308f37f342d1b08e3689194faf00bf4c268d8a2737430b8a61f60b40b2fd041b125adfad0f02c99b7e7c5298141d1fe8648f2bba9042648a387fd002d000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000022d114f8ce7884e8a602a101e67381de9e6c0b8415bf82fb9bba8adf775b632e61753fc6bf3b61d909fbbfa43fbf8903422ea5cf41444cd2d4563a521f6d96139"
+                      }
+                    },
+                    {
+                      "key": {
+                        "vec": [
+                          {
+                            "symbol": "VkHash"
+                          }
+                        ]
+                      },
+                      "val": {
+                        "bytes": "22aee4d28e70ed3341f9dcd0ac6755062b6f535aea33dd0215dc20ad7d895afe"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "ext": "v0"
+        },
+        "live_until": 4095
+      },
+      {
+        "entry": {
+          "last_modified_ledger_seq": 0,
+          "data": {
+            "contract_code": {
+              "ext": "v0",
+              "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "code": ""
+            }
+          },
+          "ext": "v0"
+        },
+        "live_until": 4095
+      }
+    ]
+  },
+  "events": []
+}
