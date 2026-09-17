@@ -4,15 +4,24 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "UltraHonk proof verifier for Corridor — implements corridor_types::Verifier (M3, skeleton)"
+description = "UltraHonk proof verifier for Corridor — implements corridor_types::Verifier"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 doctest = false
 
 [dependencies]
-soroban-sdk = { workspace = true }
+soroban-sdk = { workspace = true, features = ["alloc"] }
 corridor-types = { path = "../../crates/corridor_types" }
+ark-ff = { version = "0.5", default-features = false }
+ark-bn254 = { version = "0.5", default-features = false, features = ["curve"] }
+hex = { version = "0.4", default-features = false, features = ["alloc"] }
+once_cell = { version = "1.19", default-features = false, features = ["alloc", "race"] }
 
 [dev-dependencies]
-soroban-sdk = { workspace = true, features = ["testutils"] }
+soroban-sdk = { workspace = true, features = ["testutils", "alloc"] }
+
+[features]
+default = []
+trace = []
+std = []

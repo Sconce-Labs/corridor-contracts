@@ -1,6 +1,6 @@
 # ultrahonk_verifier
 
-The real ZK verifier for Corridor — **skeleton (M3)**.
+The real ZK verifier for Corridor.
 
 Implements `corridor_types::Verifier`
 (`verify(vk_hash, proof, public_inputs) -> bool`), so a corridor policy can
@@ -10,9 +10,8 @@ to `corridor_attestation`.
 ## Status
 
 - ✅ VK stored at deploy time; `vk_hash()` exposed; `verify` enforces the VK pin.
-- ❌ The UltraHonk verification itself (transcript → sumcheck → PCS → pairing) —
-  port from `indextree/ultrahonk_soroban_contract` using the Protocol 25 BN254
-  pairing + Poseidon2 host functions.
+- ✅ The UltraHonk verification engine (Fiat–Shamir transcript → sumcheck → Shplemini/KZG opening → BN254 pairing check) adapted from `indextree/ultrahonk_soroban_contract` and Protocol 25 BN254 host functions.
+- ✅ Full test suite with real verification key and proof test artifacts.
 
 Tracked in [#1](https://github.com/Sconce-Labs/corridor-contracts/issues/1) and
 [#2](https://github.com/Sconce-Labs/corridor-contracts/issues/2).
