@@ -3,6 +3,8 @@ resolver = "2"
 members = [
     "crates/corridor_types",
     "crates/poseidon_conformance",
+    "crates/ultrahonk_core",
+    "crates/ultrahonk_test_utils",
     "contracts/corridor_registry",
     "contracts/corridor_attestation",
     "contracts/verifier_mock",
