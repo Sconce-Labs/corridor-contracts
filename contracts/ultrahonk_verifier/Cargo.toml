@@ -4,15 +4,30 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "UltraHonk proof verifier for Corridor — implements corridor_types::Verifier (M3, skeleton)"
+description = "UltraHonk proof verifier for Corridor — real ZK verification (M3). Corridor's Verifier wire ABI over the vendored, OpenZeppelin-audited ultrahonk-soroban-verifier core."
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SDK isolation (see HANDOFF.md "SDK isolation"):
+# The vendored UltraHonk core requires soroban-sdk 28 host APIs (`Bn254Fr`
+# field arithmetic, `g1_msm`, `g1_is_on_curve`) that do not exist in the
+# workspace-default SDK 25.3. This crate and its two vendored support crates
+# therefore pin SDK 28 explicitly, overriding the workspace dependency, and
+# are built as a separate dependency graph. corridor_registry /
+# corridor_attestation / verifier_mock stay on SDK 25 and call this contract
+# cross-contract (the `Verifier` wire ABI is SDK-agnostic, so this crate
+# deliberately does NOT depend on corridor-types).
+# Upstream runs this exact core against public testnet daily (SDK 28).
+# ─────────────────────────────────────────────────────────────────────────────
+
+[dependencies]
+soroban-sdk = { version = "28.0.0", default-features = false, features = ["alloc"] }
+ultrahonk_soroban_verifier = { path = "../../crates/ultrahonk_core", default-features = false }
+
+[dev-dependencies]
+soroban-sdk = { version = "28.0.0", features = ["testutils", "alloc"] }
+# Real circuit artifacts (proof/vk/public_inputs) for the E2E tests below.
+ultrahonk-test-utils = { path = "../../crates/ultrahonk_test_utils" }
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 doctest = false
-
-[dependencies]
-soroban-sdk = { workspace = true }
-corridor-types = { path = "../../crates/corridor_types" }
-
-[dev-dependencies]
-soroban-sdk = { workspace = true, features = ["testutils"] }

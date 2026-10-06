@@ -1,0 +1,27 @@
+[package]
+name = "ultrahonk_soroban_verifier"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# VENDORED — do not modify the Rust sources in src/.
+# Source: NethermindEth/ultrahonk-rust-verifier @ 097da17df8b0b971d71885566034958a8caebab4
+# (2026-09-22, post OpenZeppelin audit remediation). Upstream MIT; see LICENSE.
+# Only this manifest differs from upstream: SDK pinned explicitly (28.0.0, NOT
+# the workspace default 25.3 — the core needs SDK-28 host APIs), alloc enabled,
+# publish off. Provenance of the verified equations: VERIFIER_PROVENANCE.md.
+license     = "MIT"
+description = "Rust verifier for UltraHonk proofs (vendored from rs-soroban-ultrahonk)"
+repository  = "https://github.com/yugocabrio/rs-soroban-ultrahonk"
+
+[dependencies]
+soroban-sdk = { version = "28.0.0", default-features = false, features = ["alloc"] }
+
+[dev-dependencies]
+soroban-sdk = { version = "28.0.0", features = ["testutils", "alloc"] }
+ultrahonk-test-utils = { path = "../ultrahonk_test_utils" }
+
+[features]
+default = []
+std = []
+trace = []

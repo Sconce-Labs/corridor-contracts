@@ -7,7 +7,7 @@
 | `corridor_attestation` | ~22 KB |
 | `corridor_registry` | ~14 KB |
 | `verifier_mock` | ~3.5 KB |
-| `ultrahonk_verifier` (skeleton) | ~5 KB |
+| `ultrahonk_verifier` (M3 step 1, real verifier) | ~52 KB |
 
 ## `enter()` resource budget
 

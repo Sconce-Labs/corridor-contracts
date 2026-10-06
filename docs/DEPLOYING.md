@@ -47,9 +47,15 @@ stellar contract invoke --id $REGISTRY --source corridor --network testnet --sen
 
 ## Swapping the verifier (M3)
 
-Deploy `ultrahonk_verifier` with the real VK, then `update_policy` the corridor
-to point `verifier` at it and set `vk_hash` to `ultrahonk_verifier.vk_hash()`.
-No change to `corridor_attestation`.
+Deploy `ultrahonk_verifier` with the real VK (1760 bytes, produced by
+**Barretenberg v0.87.0** — a bb version mismatch fails silently, see the
+contract README), then `update_policy` the corridor to point `verifier` at it
+and set `vk_hash` to `ultrahonk_verifier.vk_hash()`. No change to
+`corridor_attestation`. The VK is validated at deploy time; a malformed VK
+aborts the deployment.
+
+Build the wasm with `stellar contract build --package ultrahonk-verifier`
+(CLI ≥ 25.2 — the verifier runs on soroban-sdk 28).
 
 ## Mainnet
 

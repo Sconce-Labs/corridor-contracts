@@ -1,5 +1,15 @@
 /target
 **/target
+
+# The verifier's host tests consume committed circuit fixtures (bb
+# bytes_and_fields artifacts from the pinned noir 1.0.0-beta.9 + bb 0.87.0
+# toolchain) that live under target/ dirs. Re-include exactly those three file
+# names; everything else under target/ stays build output.
+!tests/circuits/**/target/
+tests/circuits/**/target/*
+!tests/circuits/**/target/proof
+!tests/circuits/**/target/vk
+!tests/circuits/**/target/public_inputs
 *.wasm
 .env
 .DS_Store

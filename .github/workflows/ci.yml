@@ -16,18 +16,29 @@ jobs:
         with:
           targets: wasm32v1-none
           components: rustfmt, clippy
+      # SDK 28 refuses to cross-compile without a spec-shaking-aware build
+      # system; `stellar contract build` is the supported path for the
+      # ultrahonk-verifier (soroban-sdk 28). SDK 25 contracts keep plain cargo.
+      - uses: stellar/stellar-cli@300aaf69ab100536678bdb641428b06f06b318ea # v28.0.0
+        with:
+          version: v28.0.0
       - uses: Swatinem/rust-cache@v2
       - name: Format check
         run: cargo fmt --all -- --check
       - name: Clippy
         run: cargo clippy --workspace --all-targets
       - name: Unit tests (host)
+        # Fixture-dependent tests included: tests/circuits/{simple_circuit,
+        # corridor_eligibility}/target (noir 1.0.0-beta.9 + bb 0.87.0) are
+        # committed, so the full suite runs unskipped.
         run: cargo test --workspace --locked
-      - name: Contract wasm build
+      - name: Contract wasm build (SDK 25 contracts)
         run: >
           cargo build --locked --release --target wasm32v1-none
           -p corridor-registry -p corridor-attestation
-          -p verifier-mock -p ultrahonk-verifier
+          -p verifier-mock
+      - name: Contract wasm build (ultrahonk verifier, SDK 28)
+        run: stellar contract build --package ultrahonk-verifier
       - uses: actions/upload-artifact@v4
         with:
           name: wasm

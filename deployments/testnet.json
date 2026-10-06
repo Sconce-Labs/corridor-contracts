@@ -27,5 +27,30 @@
     ],
     "result": "register -> enter (PassGranted, tag 1, passes 1) -> is_cleared == true; replay rejected with Error #12 (NullifierUsed)"
   },
-  "notes": "Option B ABI (9 public inputs, issuer-signed statements; no post_root). Redeployed with the audit R2-M7 non-canonical-word rejection. verifier_mock (CBN7N7AT…) is unchanged and reused; it is a placeholder that returns true — see ROADMAP.md M3 for the real UltraHonk verifier."
+  "notes": "Option B ABI (9 public inputs, issuer-signed statements; no post_root). Redeployed with the audit R2-M7 non-canonical-word rejection. verifier_mock (CBN7N7AT…) is unchanged and reused; it is a placeholder that returns true — superseded by the m3RealVerifier stack below for corridor 0x…04.",
+  "m3RealVerifier": {
+    "deployedAt": "2026-10-06",
+    "deployer": "GBBGVXIQKODJJLUMITL3EROABWLMMTPAECNZ46ZEOPUNMJKFQF7CCOGG",
+    "deployerIdentity": "corridor-m3 (stellar CLI keystore, testnet only)",
+    "contracts": {
+      "ultrahonk_verifier": "CCUWJKEAVQ2CSJWHJ6LEQYZUWRB7VGKUV6ETQJI4NZC2CKXVQZZVO2VW",
+      "corridor_registry": "CDNVUEYOSIJE56XUVS432PJ3OUR32MA7WQXOLFMOTKC7RWFPW66ILABX",
+      "corridor_attestation": "CCB4AQDGWYM27UPOGHL4RMBG7RWSP23ZZCRYU7LYWWLI4N4IMEEIRMPA"
+    },
+    "verifierVkHash": "f994ec68b745c2732a44ac63e1faf0210f3d804f719efee99f91b5c750b73d44",
+    "verifierToolchain": "noir 1.0.0-beta.9 + barretenberg 0.87.0 (UltraKeccakFlavor); VK from tests/circuits/corridor_eligibility/target/vk",
+    "corridorId": "0x0000000000000000000000000000000000000000000000000000000000000004",
+    "policy": {
+      "min_tier": 3,
+      "min_cred_epoch": 1,
+      "accepted_issuers": ["1f1822d4846cbc28641c62f66dd1e25dd46b70b638ad047e8381d85335ed88ee"],
+      "auditor_pubkey": "0x0",
+      "now_tolerance_secs": 3600
+    },
+    "e2eTest": {
+      "enter_tx": "1ba4f264914c94a3c424814fa1793706085302b64477e387ecc9f7967bf39ca2",
+      "register_tx": "6b28391d0ececfe84879c005ac0738d67593dc1217755aa9072c4e12e0f91531",
+      "result": "Real UltraHonk proof (14,592 B, bb 0.87.0) verified on-chain through the full pipeline: enter -> PassGranted (tag 2, passes 1) -> is_cleared == true; replay rejected with Error #12 (NullifierUsed); single-bit-tampered proof rejected with Error #11 (ProofInvalid). Fresh fixture from corridor-sdk scripts/gen-testnet-fixture.ts (same deterministic issuer key as the committed fixture, now/expiry at generation time)."
+    }
+  }
 }
