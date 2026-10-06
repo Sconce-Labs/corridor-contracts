@@ -63,8 +63,11 @@ VK for audit.
 
 - ✅ Full UltraHonk verification wired over the audited core (step 1).
 - ✅ Adapter unit tests (VK pin, length guards, constructor validation).
-- 🔜 End-to-end proof test with real corridor-circuit artifacts — needs the
-  circuit re-proven with bb 0.87.0 (step 2); the core's transcript test is
-  skipped in CI until those fixtures are committed.
+- ✅ End-to-end proof tests with real `corridor_eligibility` artifacts (step
+  2): the committed proof (noir 1.0.0-beta.9 + bb 0.87.0) verifies through
+  the full pipeline in the Soroban host, and mutated / truncated proofs and
+  reordered public inputs are rejected. The core's transcript-determinism
+  test also runs unskipped (its `simple_circuit` fixture is committed; the
+  regenerated VK is byte-identical to upstream's pinned artifact hash).
 
 [NethermindEth/ultrahonk-rust-verifier]: https://github.com/NethermindEth/ultrahonk-rust-verifier

@@ -53,9 +53,10 @@ use ultrahonk_soroban_verifier::{UltraHonkVerifier, VkLoadError, PROOF_BYTES};
 /// `corridor_types::abi::PI_LEN` (9: corridor_id, min_tier, now, nullifier,
 /// disclosed_tag, issuer_id, min_cred_epoch, auditor_pubkey, auditor_blob).
 /// Duplicated here instead of imported to keep the SDK-28 dependency graph
-/// isolated; a compile-time assert would not catch a cross-repo drift anyway,
-/// so this is checked in the Step-2 E2E test (a real proof verifies only when
-/// the count and order match the circuit).
+/// isolated; a compile-time assert would not catch a cross-repo drift anyway.
+/// The E2E tests below prove a real corridor proof (built from the shared
+/// `PI_*` layout) verifies, so any drift in count or order breaks the build's
+/// test run, not a mainnet `enter()` call.
 const PUB_INPUT_WORDS: u32 = 9;
 
 #[contracterror]
@@ -283,5 +284,94 @@ mod test {
             client.vk_hash(),
             env.crypto().sha256(&synthetic_vk(&env)).to_bytes()
         );
+    }
+
+    // ── E2E: real corridor_eligibility artifacts ────────────────────────────
+    // Proof/VK/public inputs produced by nargo 1.0.0-beta.9 + bb 0.87.0
+    // (`UltraKeccakFlavor`) from `Prover.toml`, committed under
+    // `tests/circuits/corridor_eligibility/target/` (bb `verify` accepted the
+    // proof natively before it was committed). The public inputs are the nine
+    // `PI_*` words in ABI order, so these tests simultaneously pin the
+    // duplicated `PUB_INPUT_WORDS` and the cross-repo input ordering.
+
+    /// The real corridor VK, deployed as a fresh verifier instance. Returns
+    /// the client and the pinned `vk_hash` a policy would use.
+    fn deploy_with_real_vk(env: &Env) -> (UltrahonkVerifierClient<'_>, BytesN<32>) {
+        let f = ultrahonk_test_utils::Fixture::load("corridor_eligibility");
+        assert_eq!(f.vk.len(), 1760);
+        let vk = Bytes::from_slice(env, &f.vk);
+        let hash = env.crypto().sha256(&vk).to_bytes();
+        let id = env.register(UltrahonkVerifier, (vk,));
+        (UltrahonkVerifierClient::new(env, &id), hash)
+    }
+
+    /// The fixture's contiguous `public_inputs` file split into the nine
+    /// 32-byte words the wire ABI carries, in order.
+    fn corridor_pi_words(env: &Env, pi: &[u8]) -> Vec<BytesN<32>> {
+        assert_eq!(pi.len(), 32 * PUB_INPUT_WORDS as usize);
+        let mut words: Vec<BytesN<32>> = Vec::new(env);
+        let mut off = 0;
+        while off < pi.len() {
+            let word: [u8; 32] = pi[off..off + 32].try_into().expect("32-byte word");
+            words.push_back(BytesN::from_array(env, &word));
+            off += 32;
+        }
+        words
+    }
+
+    /// The happy path end to end: a real corridor proof against the real VK
+    /// through the full UltraHonk pipeline (transcript → sumcheck → Shplemini
+    /// → pairing) inside the Soroban host.
+    #[test]
+    fn e2e_real_corridor_proof_verifies() {
+        let env = Env::default();
+        let (client, hash) = deploy_with_real_vk(&env);
+        let f = ultrahonk_test_utils::Fixture::load("corridor_eligibility");
+        assert_eq!(f.proof.len(), PROOF_BYTES);
+        let proof = Bytes::from_slice(&env, &f.proof);
+        let pi = corridor_pi_words(&env, &f.public_inputs);
+        assert!(client.verify(&hash, &proof, &pi));
+    }
+
+    /// A single flipped bit anywhere in the proof must fail the pipeline
+    /// (here: mid-proof, in the sumcheck/commitment region). Fail-closed.
+    #[test]
+    fn e2e_rejects_a_mutated_real_proof() {
+        let env = Env::default();
+        let (client, hash) = deploy_with_real_vk(&env);
+        let f = ultrahonk_test_utils::Fixture::load("corridor_eligibility");
+        let bad = ultrahonk_test_utils::mutate_byte(&f.proof, f.proof.len() / 2, 0x01);
+        let pi = corridor_pi_words(&env, &f.public_inputs);
+        assert!(!client.verify(&hash, &Bytes::from_slice(&env, &bad), &pi));
+    }
+
+    /// A one-byte-short proof is rejected by the wire guard, before any
+    /// cryptographic work.
+    #[test]
+    fn e2e_rejects_a_truncated_real_proof() {
+        let env = Env::default();
+        let (client, hash) = deploy_with_real_vk(&env);
+        let f = ultrahonk_test_utils::Fixture::load("corridor_eligibility");
+        let short = ultrahonk_test_utils::truncate(&f.proof, PROOF_BYTES - 1);
+        let pi = corridor_pi_words(&env, &f.public_inputs);
+        assert!(!client.verify(&hash, &Bytes::from_slice(&env, &short), &pi));
+    }
+
+    /// Public inputs in the wrong order (here: `corridor_id` and
+    /// `disclosed_tag` swapped) must not verify — the transcript absorbs the
+    /// contiguous encoding, so order drift is a cryptographic failure, not a
+    /// silent accept.
+    #[test]
+    fn e2e_rejects_swapped_public_input_words() {
+        let env = Env::default();
+        let (client, hash) = deploy_with_real_vk(&env);
+        let f = ultrahonk_test_utils::Fixture::load("corridor_eligibility");
+        let proof = Bytes::from_slice(&env, &f.proof);
+        let mut pi = corridor_pi_words(&env, &f.public_inputs);
+        let a = pi.get(0).expect("word 0");
+        let b = pi.get(4).expect("word 4");
+        pi.set(0, b);
+        pi.set(4, a);
+        assert!(!client.verify(&hash, &proof, &pi));
     }
 }

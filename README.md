@@ -120,9 +120,9 @@ spec, encodings, and the contract checks are in [`ABI.md`](./ABI.md).
 spec-shaking-aware build system).
 
 ```bash
-cargo test --workspace --locked -- \
-  --skip transcript::tests::test_transcript_determinism   # 49 host tests
-                                  # (skip = needs circuit fixtures, M3 step 2)
+cargo test --workspace --locked                        # 54 host tests, incl.
+# 4 E2E tests that verify a real corridor_eligibility proof (noir 1.0.0-beta.9
+# + bb 0.87.0) committed under tests/circuits/corridor_eligibility/target/
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets
 

@@ -25,6 +25,8 @@ ultrahonk_soroban_verifier = { path = "../../crates/ultrahonk_core", default-fea
 
 [dev-dependencies]
 soroban-sdk = { version = "28.0.0", features = ["testutils", "alloc"] }
+# Real circuit artifacts (proof/vk/public_inputs) for the E2E tests below.
+ultrahonk-test-utils = { path = "../../crates/ultrahonk_test_utils" }
 
 [lib]
 crate-type = ["cdylib", "rlib"]
