@@ -1,39 +1,50 @@
-# Contributing
+# Contributing to corridor-contracts
 
-`corridor-contracts` participates in the **Stellar Drips Wave** — see
-[Sconce-Labs/corridor `DRIPS.md`](https://github.com/Sconce-Labs/corridor/blob/main/DRIPS.md).
-Open issues are labelled `drips`.
+Thanks for helping build Corridor — a portable proof-of-eligibility for
+cross-border payments (Stellar/Soroban + Noir/UltraHonk). Newcomers welcome:
+look for issues labeled `good first issue`. The project overview lives in the
+[hub repo](https://github.com/Sconce-Labs/corridor).
+
+## Ground rules
+
+- **One issue per PR.** Reference it with `Closes #NNN`.
+- Conventional commits (`feat:`, `fix:`, `test:`, `docs:`, `chore:`).
+- Don't weaken a trust assumption without updating
+  `ARCHITECTURE.md §6` in the hub repo.
+- Apache-2.0; by contributing you agree your work is licensed under it.
+- We follow the [Code of Conduct](./CODE_OF_CONDUCT.md).
 
 ## Setup
 
 ```bash
 rustup target add wasm32v1-none
-cargo test --workspace
-cargo fmt --all -- --check
-cargo build --release --target wasm32v1-none \
-  -p corridor-registry -p corridor-attestation -p verifier-mock
+cargo test --workspace --locked
 ```
 
-On Windows GNU, `.cargo/config.toml` works around an `ld` export-table limit in
-soroban-sdk's dependency tree.
+## What you can work on
 
-## Rules
+- Soroban contracts (Rust, `soroban-sdk`): `contracts/corridor_registry`,
+  `contracts/corridor_attestation`, `contracts/verifier_mock`, and the real
+  `contracts/ultrahonk_verifier` (vendored, OpenZeppelin-audited core).
+- Circuit fixtures + verifier tests: `tests/circuits/` (artifact dirs are
+  re-included in git — commit only `proof` / `vk` / `public_inputs`).
+- CI, docs, gas benchmarks, and the audit-hardening backlog.
 
-- One issue per PR; `Closes #N`.
-- `cargo test --workspace` and `cargo fmt` must pass. New behaviour needs a test.
-- **The public-input layout** (`crates/corridor_types/src/abi.rs`) is the source
-  of truth mirrored in `ABI.md`, `corridor-circuits`, and `corridor-sdk`.
-  Changing it is a coordinated PR across all four.
-- **Poseidon2 conformance** (`crates/poseidon_conformance`) must stay green.
-- Every new contract error gets a stable number and a doc-comment line.
+## Gates (all must pass)
 
-## Layout
+```bash
+cargo test --workspace --locked
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets -- -D warnings
+```
 
-| Crate | Role |
-|-------|------|
-| `crates/corridor_types` | `errors` / `policy` / `abi` / `interfaces` modules |
-| `crates/poseidon_conformance` | test-only Poseidon2 cross-impl check |
-| `contracts/corridor_registry` | policy CRUD + `set_min_cred_epoch` + two-step admin |
-| `contracts/corridor_attestation` | `enter` / `is_cleared` / nullifier ledger |
-| `contracts/ultrahonk_verifier` | real UltraHonk verifier (M3, soroban-sdk 28) |
-| `contracts/verifier_mock` | configurable verifier (tests + staging) |
+Building the verifier wasm additionally needs the `stellar` CLI ≥ 25.2:
+`stellar contract build --package ultrahonk-verifier` (soroban-sdk 28 refuses
+older build systems).
+
+## Review & merging
+
+Maintainers aim to review within 48h during active contribution waves. Small
+PRs get reviewed first — keep diffs reviewable. CI must be green before merge;
+if CI fails for reasons outside your control, say so in the PR and we will
+pick it up.
