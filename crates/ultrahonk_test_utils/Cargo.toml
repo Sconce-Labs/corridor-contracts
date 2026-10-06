@@ -3,11 +3,14 @@ name = "ultrahonk-test-utils"
 version = "0.1.0"
 edition = "2021"
 publish = false
+license = "MIT"
 
 # VENDORED from NethermindEth/ultrahonk-rust-verifier @ 097da17
-# (crates/test-utils). One path change: Fixture::load reads tests/circuits/
-# instead of circuits/. SDK pinned to 28.0.0 (NOT the workspace default 25.3)
-# to stay inside the verifier's dependency graph.
+# (crates/test-utils). Deviations from upstream: one path change
+# (Fixture::load reads tests/circuits/ instead of circuits/), SDK pinned to
+# 28.0.0 (NOT the workspace default 25.3) to stay inside the verifier's
+# dependency graph, and the license field added (upstream relies on the repo
+# root manifest; cargo-deny needs it here).
 
 [dependencies]
 soroban-sdk = { version = "28.0.0", features = ["testutils", "alloc"] }
