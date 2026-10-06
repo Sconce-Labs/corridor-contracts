@@ -69,5 +69,10 @@ VK for audit.
   reordered public inputs are rejected. The core's transcript-determinism
   test also runs unskipped (its `simple_circuit` fixture is committed; the
   regenerated VK is byte-identical to upstream's pinned artifact hash).
+- ✅ **Live on testnet** (step 3): deployed with the real VK and wired into a
+  corridor policy — a fresh corridor proof granted a pass on-chain
+  (`PassGranted`, `is_cleared == true`), a replay was rejected with
+  `NullifierUsed` (#12) and a tampered proof with `ProofInvalid` (#11).
+  Addresses + tx hashes: `deployments/testnet.json` (`m3RealVerifier`).
 
 [NethermindEth/ultrahonk-rust-verifier]: https://github.com/NethermindEth/ultrahonk-rust-verifier
