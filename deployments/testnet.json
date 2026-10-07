@@ -27,7 +27,15 @@
     ],
     "result": "register -> enter (PassGranted, tag 1, passes 1) -> is_cleared == true; replay rejected with Error #12 (NullifierUsed)"
   },
-  "notes": "Option B ABI (9 public inputs, issuer-signed statements; no post_root). Redeployed with the audit R2-M7 non-canonical-word rejection. verifier_mock (CBN7N7AT…) is unchanged and reused; it is a placeholder that returns true — superseded by the m3RealVerifier stack below for corridor 0x…04.",
+  "notes": "Option B ABI (9 public inputs, issuer-signed statements; no post_root). Redeployed with the audit R2-M7 non-canonical-word rejection. Superseded on 2026-10-07: corridor 0x…04's policy was swapped to the real verifier via update_policy (tx f0a8f0d6…c8f), corridor 0x…05 was registered on this stack with the real verifier (tx 675906f7…b08), and a real bb 0.87.0 proof was granted on this legacy attestation (tx 948b6084…e4c: PassGranted, is_cleared == true, replay → Error #12 NullifierUsed). verifier_mock (CBN7N7AT…) no longer backs any registered corridor.",
+  "migrationToRealVerifier": {
+    "date": "2026-10-07",
+    "updatePolicyTx": "f0a8f0d6764566fb443fdc7339fa3e35c7c15f2961b93129e0bd41e4ce07fc8f",
+    "registerCorridor5Tx": "675906f7889ef97a8c49338864a9c45143ce3906434f71942b0e561eaa970b08",
+    "realProofEnterTx": "948b6084bdbd77f297be283b56b83e15b26c44fc4662a626b8e4e8514037de4c",
+    "corridor5Id": "0x0000000000000000000000000000000000000000000000000000000000000005",
+    "result": "corridor 0x…04 policy now pins ultrahonk_verifier CCUWJKEA…O2VW + vk_hash f994ec68…d44; real-proof enter on the legacy attestation granted PassGranted, is_cleared == true, replay rejected Error #12 (NullifierUsed)"
+  },
   "m3RealVerifier": {
     "deployedAt": "2026-10-06",
     "deployer": "GBBGVXIQKODJJLUMITL3EROABWLMMTPAECNZ46ZEOPUNMJKFQF7CCOGG",

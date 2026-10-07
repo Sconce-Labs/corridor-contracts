@@ -15,11 +15,12 @@ and burns a per-corridor nullifier, and the **verifier** behind a stable
 interface. It is the **source of truth for the public-input ABI**
 ([`ABI.md`](./ABI.md)) that the Noir circuit and the SDK must match.
 
-> **The policy binding is live on testnet; the ZK verifier is a mock** that
-> returns `true` until the real UltraHonk verifier lands (milestone **M3** —
-> [#1](https://github.com/Sconce-Labs/corridor-contracts/issues/1)). Until then,
-> `is_cleared` on testnet attests the policy binding and one-time use, **not**
-> the cryptographic proof.
+> **The real UltraHonk verifier is live on testnet — on both stacks.** Every
+> registered corridor pins the vendored, OpenZeppelin-audited verifier core
+> (`vk_hash` is hashed in the constructor and enforced per-proof). `is_cleared`
+> on testnet now attests real cryptography: a pass exists only if a valid
+> bb 0.87.0 UltraHonk proof was verified on-chain and its nullifier not
+> previously burned. `verifier_mock` remains for host tests only.
 
 | | |
 |---|---|
@@ -88,7 +89,7 @@ corridor-contracts/
 | `contracts/corridor_registry` | contract | Stores one `CorridorPolicy` per corridor. Operator-gated `register` / `update_policy` / `set_paused` / `set_min_cred_epoch` (monotonic); admin is two-step (`propose_admin` → `accept_admin`). |
 | `contracts/corridor_attestation` | contract | `enter()` binds a proof to a policy, calls the verifier, burns `(corridor_id, nullifier)`, writes a `PassRecord`, bumps `Passes`. `is_cleared()` / `pass_record()` / `passes()` are the read side. Persistent entries are TTL-extended on every read. |
 | `contracts/ultrahonk_verifier` | contract | The real UltraHonk verifier — full pipeline (transcript → sumcheck → Shplemini → pairing) over the vendored, OpenZeppelin-audited core. **soroban-sdk 28** (isolated graph; build via `stellar contract build`, CLI ≥ 25.2). Proofs must come from **bb 0.87.0**. See its [README](./contracts/ultrahonk_verifier/README.md). |
-| `contracts/verifier_mock` | contract | Implements `VerifierClient` with a settable answer. Used by every host test and by the testnet deployment until M3. **Never deploy to a corridor that guards real value.** |
+| `contracts/verifier_mock` | contract | Implements `VerifierClient` with a settable answer. Used by host tests only. **Not deployed behind any corridor** — the 2026-09-10 testnet corridor was migrated to the real verifier on 2026-10-07. |
 
 ---
 
@@ -170,10 +171,16 @@ Option B ABI (9 public inputs), deployed 2026-09-10 —
 |----------|---------|
 | `corridor_registry` | [`CDGMQ24E6OIBZB3EKJN5TUA5POYE6D5FNBL2II6SRLTYF32TE4HIEXJ6`](https://stellar.expert/explorer/testnet/contract/CDGMQ24E6OIBZB3EKJN5TUA5POYE6D5FNBL2II6SRLTYF32TE4HIEXJ6) |
 | `corridor_attestation` | [`CCHWKVRCEKPJHEXREP5SCZ4TEKNBFYEFYA2VR3SET5AMG4WOC76LDL4K`](https://stellar.expert/explorer/testnet/contract/CCHWKVRCEKPJHEXREP5SCZ4TEKNBFYEFYA2VR3SET5AMG4WOC76LDL4K) |
-| `verifier_mock` (placeholder — M3) | [`CBN7N7AT7CPAA7MBIAULEBY3GIV7NNB3XPNEUJSIAHFIM5BJ7GIGK46Y`](https://stellar.expert/explorer/testnet/contract/CBN7N7AT7CPAA7MBIAULEBY3GIV7NNB3XPNEUJSIAHFIM5BJ7GIGK46Y) |
+| `verifier_mock` (tests only — no corridor uses it since 2026-10-07) | [`CBN7N7AT7CPAA7MBIAULEBY3GIV7NNB3XPNEUJSIAHFIM5BJ7GIGK46Y`](https://stellar.expert/explorer/testnet/contract/CBN7N7AT7CPAA7MBIAULEBY3GIV7NNB3XPNEUJSIAHFIM5BJ7GIGK46Y) |
 
 Smoke-verified on testnet: `register → enter` (PassGranted, tag 1, passes 1)
 `→ is_cleared == true`; replay rejected with `NullifierUsed` (Error #12).
+**2026-10-07 migration:** corridor `0x…04`'s policy was swapped to the real
+`ultrahonk_verifier` (`PolicyUpdated`), corridor `0x…05` was registered with it,
+and a fresh real bb 0.87.0 proof was granted on this legacy stack —
+[`enter` tx `948b6084…de4c`](https://stellar.expert/explorer/testnet/tx/948b6084bdbd77f297be283b56b83e15b26c44fc4662a626b8e4e8514037de4c)
+→ `PassGranted`, `is_cleared == true`, replay → `NullifierUsed`. See
+[`deployments/testnet.json`](./deployments/testnet.json) → `migrationToRealVerifier`.
 
 Deploy your own stack:
 
