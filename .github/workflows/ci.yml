@@ -19,7 +19,7 @@ jobs:
       # SDK 28 refuses to cross-compile without a spec-shaking-aware build
       # system; `stellar contract build` is the supported path for the
       # ultrahonk-verifier (soroban-sdk 28). SDK 25 contracts keep plain cargo.
-      - uses: stellar/stellar-cli@300aaf69ab100536678bdb641428b06f06b318ea # v28.0.0
+      - uses: stellar/stellar-cli@c0f4d0da891bbf214c08b8c5035ae6db80e9a3bd # v28.1.0
         with:
           version: v28.0.0
       - uses: Swatinem/rust-cache@v2
