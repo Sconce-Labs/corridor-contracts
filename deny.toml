@@ -7,7 +7,14 @@ yanked = "deny"
 # soroban-sdk 25/27 pull in `derivative` (RUSTSEC-2024-0388) and `paste`
 # (RUSTSEC-2024-0436), both unmaintained-but-not-vulnerable. Revisit on the
 # next soroban-sdk bump.
-ignore = ["RUSTSEC-2024-0388", "RUSTSEC-2024-0436"]
+#
+# RUSTSEC-2026-0387: `crypto-bigint` 0.5 has timing variability in
+# constant-time operations, fixed only in 0.7.6. It is reached only through
+# soroban-env-host's elliptic-curve 0.13 (the native test host, and the
+# UltraHonk verifier's test utilities); the deployed WASM does not contain it
+# (`cargo tree -e normal --target wasm32v1-none -i crypto-bigint`). Remove
+# once soroban moves to crypto-bigint 0.7.
+ignore = ["RUSTSEC-2024-0388", "RUSTSEC-2024-0436", "RUSTSEC-2026-0387"]
 
 [licenses]
 allow = [
